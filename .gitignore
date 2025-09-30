@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# UV (this package is not necessarily intended to have its own environment)
+.python-version
+uv.lock

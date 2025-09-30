@@ -1,2 +1,2 @@
 # pzp-hardware
-Laboratory hardware support Pieces for the puzzlepiece GUI framework
+Laboratory hardware support Pieces for the puzzlepiece GUI & automation framework
