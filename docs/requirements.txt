@@ -1,4 +1,4 @@
-puzzlepiece>=0.12.1
+puzzlepiece @ git+https://github.com/jdranczewski/puzzlepiece@dev
 PyQt6-Qt6==6.6.0
 PyQt6==6.6.0
 QtPy==2.4.1

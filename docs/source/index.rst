@@ -10,6 +10,7 @@ Welcome to pzp-hardware's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   getting_started
    modules
 
 
