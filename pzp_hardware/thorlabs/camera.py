@@ -4,10 +4,10 @@
 # Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
 
 r"""
-Pieces for interacting with `Thorlabs scientific cameras <https://www.thorlabs.com/navigation.cfm?guide_id=2025>`_
-using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`_ framework.
+Pieces for interacting with `Thorlabs scientific cameras <https://www.thorlabs.com/navigation.cfm?guide_id=2025>`__
+using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.
 
-Example usage::
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
 
     import puzzlepiece as pzp
     from pzp_hardware.thorlabs import camera
@@ -30,6 +30,10 @@ Installation
   or another drive letter)
 * When running the Piece for the first time, you will be asked for the DLL directory - provide the one you copied above.
 
+Requirements
+------------
+.. pzp_requirements:: pzp_hardware.thorlabs.camera
+
 Available Pieces
 ----------------
 """
@@ -39,8 +43,12 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, QtCore
 import numpy as np
 import os, sys
+
 pht.requirements({
-    "PIL": {"pip": "pillow"}
+    "PIL": {
+        "pip": "pillow",
+        "url": "https://pillow.readthedocs.io/en/stable/installation/basic-installation.html"
+    }
 })
 from PIL import Image
 
@@ -54,7 +62,7 @@ class _Settings(pzp.piece.Popup):
     def define_params(self):
         self.add_invisible_params()
         return super().define_params()
-    
+
     def define_actions(self):
         self.add_child_actions(("Take background", "ROI", "Rediscover", "Trigger"))
         return super().define_actions()
@@ -94,7 +102,7 @@ class Base(pzp.Piece):
             except Exception as e:
                 self.dispose()
                 raise e
-        
+
         @pzp.param.disconnect(self)
         def disconnect():
             if self.puzzle.debug:
@@ -103,7 +111,7 @@ class Base(pzp.Piece):
             self.dispose()
             return 0
         #endregion
-        
+
         #region Image, triggering
         @pzp.param.array(self, 'image')
         @self._ensure_connected
@@ -123,7 +131,7 @@ class Base(pzp.Piece):
             if self.params['sub_background'].get_value():
                 image -= self.params['background'].get_value()
             return image
-            
+
         @pzp.param.group("Triggering")
         @pzp.param.checkbox(self, "unlimited", 0, visible=False)
         @self._ensure_connected
@@ -133,7 +141,7 @@ class Base(pzp.Piece):
                 return value
 
             self.camera.frames_per_trigger_zero_for_unlimited = not value
-            
+
         # Make a checkbox for arming the camera
         self._triggered = 0
         @pzp.param.group("Triggering")
@@ -143,7 +151,7 @@ class Base(pzp.Piece):
             if self.puzzle.debug:
                 return 1
             current_value = self.params['armed'].value
-            
+
             if value and not current_value:
                 # Arm and trigger the camera
                 self.camera.arm(self["frame_buffer"].value)
@@ -154,10 +162,10 @@ class Base(pzp.Piece):
                 self._triggered = 0
                 return 0
             return current_value
-        
+
         pzp.param.spinbox(self, "frame_buffer", 2, visible=False)(None).set_group("Triggering")
         #endregion
-            
+
         #region Exposure
         # The exposure value can be set - that's what this function does
         @pzp.param.group("Exposure")
@@ -195,7 +203,7 @@ class Base(pzp.Piece):
                 return self.params['gain'].value or 0
             # If we're connected and not in debug mode, return the exposure from the camera
             return self.camera.gain
-        
+
         @pzp.param.group("Exposure")
         @pzp.param.spinbox(self, "black", 0, visible=False)
         @self._ensure_connected
@@ -217,14 +225,14 @@ class Base(pzp.Piece):
         def get_counts(self):
             image = self.params['image'].get_value()
             return np.sum(image)
-        
+
         @pzp.param.group("Exposure")
         @pzp.param.readout(self, 'max_counts', False)
         def get_counts(self):
             image = self.params['image'].get_value()
             return np.amax(image)
         #endregion
-        
+
         @pzp.param.group("Region of interest")
         @pzp.param.array(self, 'roi', False)
         @self._ensure_connected
@@ -232,14 +240,14 @@ class Base(pzp.Piece):
             if not self.puzzle.debug:
                 return self.camera.roi
             return [0, 0, 99, 79]
-            
+
         @roi.set_setter(self)
         @self._ensure_connected
         @self._ensure_disarmed
         def roi(self, value):
             if not self.puzzle.debug:
                 self.camera.roi = value
-        
+
         pzp.param.checkbox(self, 'sub_background', 0, visible=False)(None).set_group("Background")
         pzp.param.array(self, 'background', False)(None).set_group("Background")
 
@@ -272,11 +280,11 @@ class Base(pzp.Piece):
 
             if filename is None:
                 filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-                    self.puzzle, 'Save file as...', 
+                    self.puzzle, 'Save file as...',
                     '.', "Image files (*.png)")
-            
+
             Image.fromarray((image // 4).astype(np.uint8)).save(filename)
-        
+
         @pzp.action.define(self, "Rediscover", visible=False)
         def rediscover(self):
             if not self.puzzle.debug:
@@ -298,12 +306,12 @@ class Base(pzp.Piece):
     def _ensure_connected(self):
         if not self.puzzle.debug and not self.params['connected'].value:
             raise Exception('Camera not connected')
-        
+
     @pzp.piece.ensurer
     def _ensure_armed(self):
         if not self.params['armed'].value:
             self.params['armed'].set_value(1)
-    
+
     @pzp.piece.ensurer
     def _ensure_disarmed(self):
         if self.params['armed'].value:
@@ -314,7 +322,9 @@ class Base(pzp.Piece):
         # This function is called if not in debug mode to setup the hardware connection API
         if not self.puzzle.globals.require('tlc_sdk'):
             # If the SDK has not been set up yet, we set it up here
-            pht.requirements(["thorlabs_tsi_sdk"])
+            pht.requirements({"thorlabs_tsi_sdk": {
+                "url": "https://pzp-hardware.readthedocs.io/en/latest/pzp_hardware.thorlabs.camera.html#installation"
+            }})
             dll_directory = r"C:\Program Files\Thorlabs\Scientific Imaging\Scientific Camera Support\Scientific Camera Interfaces\SDK\Native Toolkit\dlls\Native_64_lib"
             dll_directory = pht.config("thorcam_dll_directory", default=dll_directory, validator=pht.validator_path_exists)
             pht.add_dll_directory(dll_directory)
@@ -418,7 +428,7 @@ class _ROI_Popup(pzp.piece.Popup):
         return layout
 
 
-#MARK: Main Pieces 
+#MARK: Main Pieces
 class Piece(image_preview.ImagePreview, Base):
     """
     Like :class:`~pzp-hardware.thorlabs.camera.Base`, but includes a preview for the
