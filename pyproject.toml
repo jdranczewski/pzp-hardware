@@ -27,3 +27,6 @@ classifiers = [
 "Homepage" = "https://github.com/jdranczewski/pzp-hardware"
 "Documentation" = "https://pzp-hardware.readthedocs.io"
 "Bug Tracker" = "https://github.com/jdranczewski/pzp-hardware/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pzp_hardware"]
