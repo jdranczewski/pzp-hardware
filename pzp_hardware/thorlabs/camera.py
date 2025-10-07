@@ -1,3 +1,38 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support
+# Pieces for the puzzlepiece GUI & automation framework.
+# Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+r"""
+Pieces for interacting with `Thorlabs scientific cameras <https://www.thorlabs.com/navigation.cfm?guide_id=2025>`_
+using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`_ framework.
+
+Example usage::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.thorlabs import camera
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("camera", camera.Piece, row=0, col=0)
+    puzzle.show()
+    app.exec()
+
+Installation
+------------
+* Install ThorCam (not ThorImageCam) from https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam
+* Locate ``Scientific_Camera_Interfaces.zip``
+  (usually in ``C:\Program Files\Thorlabs\Scientific Imaging\Scientific Camera Support``)
+* Unzip the file to a convenient location
+* In the unzipped folder, go to ``SDK/Python Toolki`` and install the provided package zip file in your Python
+  environment, for example with ``pip install "<path to thorlabs_tsi_camera_python_sdk_package.zip>"``
+* In the unzipped folder, locate ``SDK\Native Toolkit\dlls\Native_64_lib`` and copy its full path (starting with ``C:``
+  or another drive letter)
+* When running the Piece for the first time, you will be asked for the DLL directory - provide the one you copied above.
+
+Available Pieces
+----------------
+"""
 import puzzlepiece as pzp
 from puzzlepiece.extras import hardware_tools as pht
 import pyqtgraph as pg
@@ -9,7 +44,10 @@ from PIL import Image
 from pzp_hardware.generic.mixins import image_preview
 
 
-class Settings(pzp.piece.Popup):
+class _Settings(pzp.piece.Popup):
+    """
+    Popup to handle showing settings (params and actions that are normally hidden).
+    """
     def define_params(self):
         self.add_invisible_params()
         return super().define_params()
@@ -19,6 +57,10 @@ class Settings(pzp.piece.Popup):
         return super().define_actions()
 
 class Base(pzp.Piece):
+    """
+    Base camera Piece without a preview. Can be used to get images and show settings
+    without an explicit image view in the UI.
+    """
     custom_horizontal = True
 
     def define_params(self):
@@ -81,8 +123,8 @@ class Base(pzp.Piece):
             
         @pzp.param.group("Triggering")
         @pzp.param.checkbox(self, "unlimited", 0, visible=False)
-        @self._ensure_disarmed
         @self._ensure_connected
+        @self._ensure_disarmed
         def unlimited(self, value):
             if self.puzzle.debug:
                 return value
@@ -210,7 +252,7 @@ class Base(pzp.Piece):
         @pzp.action.define(self, "ROI", visible=False)
         @self._ensure_connected
         def roi(self):
-            self.open_popup(ROI_Popup, "Camera Region of Interest")
+            self.open_popup(_ROI_Popup, "Camera Region of Interest")
 
         @pzp.action.define(self, "Reset ROI", visible=False)
         @self._ensure_connected
@@ -247,7 +289,7 @@ class Base(pzp.Piece):
 
         @pzp.action.define(self, "Settings")
         def settings(self):
-            self.open_popup(Settings, "Camera settings")
+            self.open_popup(_Settings, "Camera settings")
 
     @pzp.piece.ensurer
     def _ensure_connected(self):
@@ -296,7 +338,10 @@ class Base(pzp.Piece):
 
 
 #MARK: ROI Popup
-class ROI_Popup(pzp.piece.Popup):
+class _ROI_Popup(pzp.piece.Popup):
+    """
+    Popup for setting the camera's Region of Interest (ROI).
+    """
     def define_actions(self):
         @pzp.action.define(self, "set_roi_from_camera", visible=False)
         def set_roi_from_camera(self):
@@ -372,12 +417,22 @@ class ROI_Popup(pzp.piece.Popup):
 
 #MARK: Main Pieces 
 class Piece(image_preview.ImagePreview, Base):
+    """
+    Like :class:`~pzp-hardware.thorlabs.camera.Base`, but includes a preview for the
+    captured image. Can be made to run live.
+    """
     live_toggle = True
     autolevel_toggle = True
     max_counts = 1023
 
 
 class LineoutPiece(image_preview.LineoutImagePreview, Base):
+    """
+    Like :class:`~pzp-hardware.thorlabs.camera.Piece` above, but the preview includes
+    two movable lines (horizontal and vertical), and plots that show the image profile
+    along these lines. These can also act as a crosshair for alignment, and a circle is
+    shown where they cross.
+    """
     live_toggle = True
     autolevel_toggle = True
     max_counts = 1023
