@@ -39,6 +39,9 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, QtCore
 import numpy as np
 import os, sys
+pht.requirements({
+    "PIL": {"pip": "pillow"}
+})
 from PIL import Image
 
 from pzp_hardware.generic.mixins import image_preview
