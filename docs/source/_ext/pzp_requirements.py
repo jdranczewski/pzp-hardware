@@ -62,8 +62,15 @@ class RequirementsDirective(SphinxDirective):
 
     def run(self) -> list[nodes.Node]:
         # Read the file correspodning to the module
-        with open(f"../{self.arguments[0].replace('.', '/')}.py", "r") as f:
-            tree = ast.parse(f.read())
+        try:
+            with open(f"../{self.arguments[0].replace('.', '/')}.py", "r") as f:
+                tree = ast.parse(f.read())
+        except FileNotFoundError:
+            try:
+                with open(f"../../{self.arguments[0].replace('.', '/')}.py", "r") as f:
+                    tree = ast.parse(f.read())
+            except FileNotFoundError:
+                raise FileNotFoundError(os.path.abspath(f"{self.arguments[0].replace('.', '/')}.py"))
 
         # Find the name used for hardware_tools
         pht = _ParserFindPHT(tree).found
