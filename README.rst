@@ -67,7 +67,9 @@ of the `main repository <https://github.com/jdranczewski/pzp-hardware>`__, and w
 
 **Your Piece should broadly follow the same conventions as the ones currently in the repository.** For example,
 image-based Pieces like cameras, DMDs, or SLMs should have an ``image`` param, allowing you to use the standard
-preview layouts provided in :class:`pzp_hardware.generic.mixins.image_preview`. Your Piece should work reliably
+preview layouts provided in
+``pzp_hardware.generic.mixins.image_preview``.
+Your Piece should work reliably
 in debug mode to allow testing. You can use
 `puzzlepiece.extras.hardware_tools <https://puzzlepiece.readthedocs.io/en/stable/puzzlepiece.extras.hardware_tools.html>`__
 to make integration with manufacturer APIs and DLLs easier, and in particular you should indicate requirements
