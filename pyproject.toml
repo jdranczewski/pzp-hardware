@@ -9,7 +9,7 @@ authors = [
   { name="Jakub Dranczewski", email="jakub.dranczewski@gmail.com" },
 ]
 description = "Laboratory hardware support Pieces for the puzzlepiece GUI & automation framework"
-readme = "README.md"
+readme = "README.rst"
 requires-python = ">=3.7"
 dependencies = [
     "puzzlepiece>=0.12.0",

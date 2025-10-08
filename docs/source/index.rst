@@ -6,6 +6,11 @@
 Puzzlepiece Hardware (pzp-hardware)
 ===================================
 
+.. image:: pzp-hardware.svg
+
+.. include:: ../../README.rst
+   :start-line: 5
+
 .. toctree::
    :maxdepth: 3
    :caption: Contents:
