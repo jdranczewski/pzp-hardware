@@ -7,6 +7,7 @@ Puzzlepiece Hardware (pzp-hardware)
 ===================================
 
 .. image:: pzp-hardware.svg
+   :alt: pzp-hardware logo
 
 .. include:: ../../README.rst
    :start-line: 5
