@@ -1,3 +1,3 @@
 """
-.. module_title:: Oceanview hardware Pieces
+:module_title:`Oceanview hardware Pieces`
 """

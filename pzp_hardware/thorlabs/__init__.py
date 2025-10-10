@@ -1,3 +1,3 @@
 """
-.. module_title:: ThorLabs hardware Pieces
+:module_title:`ThorLabs hardware Pieces`
 """

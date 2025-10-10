@@ -1,3 +1,3 @@
 """
-.. module_title:: Generic software Pieces
+:module_title:`Generic software Pieces`
 """

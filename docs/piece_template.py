@@ -3,7 +3,7 @@
 # Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
 
 r"""
-.. module_title:: Hardware name - speficfy this for the documentation build to include your file
+:module_title:`Hardware name - speficfy this for the documentation build to include your file`
 
 Pieces for interacting with `name of your hardware here <https://example.com>`__ (TODO: update name here)
 using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.

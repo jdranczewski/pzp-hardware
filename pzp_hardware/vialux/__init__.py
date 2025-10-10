@@ -1,3 +1,3 @@
 """
-.. module_title:: Vialux hardware Pieces
+:module_title:`Vialux hardware Pieces`
 """

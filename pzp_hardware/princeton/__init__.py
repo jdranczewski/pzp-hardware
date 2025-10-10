@@ -1,3 +1,3 @@
 """
-.. module_title:: Princeton Instruments hardware Pieces
+:module_title:`Princeton Instruments hardware Pieces`
 """

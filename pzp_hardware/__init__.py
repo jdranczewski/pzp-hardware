@@ -1,3 +1,3 @@
 """
-.. module_title:: Modules
+:module_title:`Modules`
 """

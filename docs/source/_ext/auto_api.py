@@ -2,7 +2,7 @@ from __future__ import annotations
 from docutils import nodes
 
 from sphinx.application import Sphinx
-from sphinx.util.docutils import SphinxDirective
+from sphinx.util.docutils import SphinxRole
 from sphinx.util.typing import ExtensionMetadata
 from sphinx.util import logging
 
@@ -21,13 +21,12 @@ def _capture_heading(fname):
                 head += line
                 if i > 19:
                     break
-            result = re.search(r".. module_title:: (.+)", head)
+            result = re.search(r":module_title:`(.+)`", head)
             if result is None:
                 return None
             return result.group(1)
     except FileNotFoundError:
         return None
-
 
 def _make_fname(path: str) -> str:
     components = os.path.normpath(path).split(os.path.sep)
@@ -40,20 +39,32 @@ def _make_fname(path: str) -> str:
     components.append("rst")
     return ".".join(components)
 
+def _write_file_if_changed(fname: str, text: str) -> None:
+    try:
+        with open(fname, "r") as f:
+            current = f.read()
+            current = current.replace("\r\n", "\n").replace("\n\r", "\n")
+            if current == text:
+                return
+    except FileNotFoundError:
+        pass
+    with open(fname, "w") as f:
+        f.write(text)
+
 def _process_file(folder: str, file: str, destination: str) -> str:
     heading = _capture_heading(os.path.join(folder, file))
     if heading is None:
         return None
 
     fname = _make_fname(os.path.join(folder, file))
-    with open(os.path.join(destination, fname), "w") as f:
-        f.write(f"""{heading}
+    text = (f"""{heading}
 {"=" * len(heading)}
 
 .. automodule:: {fname.replace(".rst", "")}
    :members:
    :show-inheritance:
 """)
+    _write_file_if_changed(os.path.join(destination, fname), text)
     return fname
 
 def _process_folder(folder: str, destination: str) -> None:
@@ -91,8 +102,7 @@ def _process_folder(folder: str, destination: str) -> None:
         if fname:
             text += f"   {fname.replace('.rst', '')}\n"
 
-    with open(os.path.join(destination, folder_fname), "w") as f:
-        f.write(text)
+    _write_file_if_changed(os.path.join(destination, folder_fname), text)
 
     return folder_fname
 
@@ -108,21 +118,21 @@ def generate_docs(app: Sphinx) -> None:
         os.mkdir(destination)
     _process_folder(src, destination)
 
-class ModuleTitleDirective(SphinxDirective):
+class ModuleTitleRole(SphinxRole):
     """
     A directive that parses the given module for calls to
     ``puzzlepiece.extras.hardware_tools.requirements`` and
     produces a requirement list with pip commands and
     installation links.
     """
-    required_arguments = 1
 
-    def run(self) -> list[nodes.Node]:
-        return []
+    def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
+        return [], []
+
 
 def setup(app: Sphinx) -> ExtensionMetadata:
     app.connect('builder-inited', generate_docs)
-    app.add_directive('module_title', ModuleTitleDirective)
+    app.add_role('module_title', ModuleTitleRole())
 
     return {
         'version': '0.1',
