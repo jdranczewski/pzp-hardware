@@ -77,6 +77,8 @@ class Base(pzp.Piece):
     """
     Base camera Piece without a preview. Can be used to get images and show settings
     without an explicit image view in the UI.
+
+    .. image:: ../images/pzp_hardware.thorlabs.camera.Base.png
     """
 
     custom_horizontal = True
@@ -86,7 +88,7 @@ class Base(pzp.Piece):
 
         # Make a parameter for the serial number of the camera
         @pzp.param.dropdown(self, "serial", "")
-        def get_serials(self):
+        def get_serials():
             if self.puzzle.debug:
                 return None
             return self.puzzle.globals["tlc_sdk"].discover_available_cameras()
@@ -128,7 +130,7 @@ class Base(pzp.Piece):
         @pzp.param.array(self, "image")
         @self._ensure_connected
         @self._ensure_armed
-        def get_image(self):
+        def get_image():
             if self.puzzle.debug:
                 # If we're in debug mode, we just return random noise
                 image = np.random.random((1080, 1440)) * 1024
@@ -150,7 +152,7 @@ class Base(pzp.Piece):
         @pzp.param.checkbox(self, "unlimited", 0, visible=False)
         @self._ensure_connected
         @self._ensure_disarmed
-        def unlimited(self, value):
+        def unlimited(value):
             if self.puzzle.debug:
                 return value
 
@@ -162,7 +164,7 @@ class Base(pzp.Piece):
         @pzp.param.group("Triggering")
         @pzp.param.checkbox(self, "armed", 0, visible=False)
         @self._ensure_connected
-        def armed(self, value):
+        def armed(value):
             if self.puzzle.debug:
                 return 1
             current_value = self.params["armed"].value
@@ -188,7 +190,7 @@ class Base(pzp.Piece):
         @pzp.param.group("Exposure")
         @pzp.param.spinbox(self, "exposure", 25.0)
         @self._ensure_connected
-        def exposure(self, value):
+        def exposure(value):
             if self.puzzle.debug:
                 return value
             # If we're connected and not in debug mode, set the exposure
@@ -199,7 +201,7 @@ class Base(pzp.Piece):
         # called to see what the current exposure value is.
         @exposure.set_getter(self)
         @self._ensure_connected
-        def get_exposure(self):
+        def get_exposure():
             if self.puzzle.debug:
                 return self.params["exposure"].value or 1
             # If we're connected and not in debug mode, return the exposure from the camera
@@ -215,7 +217,7 @@ class Base(pzp.Piece):
 
         @gain.set_getter(self)
         @self._ensure_connected
-        def gain(self):
+        def gain():
             if self.puzzle.debug:
                 return self.params["gain"].value or 0
             # If we're connected and not in debug mode, return the exposure from the camera
@@ -224,28 +226,28 @@ class Base(pzp.Piece):
         @pzp.param.group("Exposure")
         @pzp.param.spinbox(self, "black", 0, visible=False)
         @self._ensure_connected
-        def black(self, value):
+        def black(value):
             if self.puzzle.debug:
                 return value
             self.camera.black_level = value
 
         @black.set_getter(self)
         @self._ensure_connected
-        def black(self):
+        def black():
             if self.puzzle.debug:
-                return self.params["black"].value
+                return self.params["black"].value or 0
             # If we're connected and not in debug mode, return the exposure from the camera
             return self.camera.black_level
 
         @pzp.param.group("Exposure")
         @pzp.param.readout(self, "counts", False)
-        def get_counts(self):
+        def get_counts():
             image = self.params["image"].get_value()
             return np.sum(image)
 
         @pzp.param.group("Exposure")
         @pzp.param.readout(self, "max_counts", False)
-        def get_counts(self):
+        def get_counts():
             image = self.params["image"].get_value()
             return np.amax(image)
 
@@ -254,7 +256,7 @@ class Base(pzp.Piece):
         @pzp.param.group("Region of interest")
         @pzp.param.array(self, "roi", False)
         @self._ensure_connected
-        def roi(self):
+        def roi():
             if not self.puzzle.debug:
                 return self.camera.roi
             return [0, 0, 99, 79]
@@ -262,7 +264,7 @@ class Base(pzp.Piece):
         @roi.set_setter(self)
         @self._ensure_connected
         @self._ensure_disarmed
-        def roi(self, value):
+        def roi(value):
             if not self.puzzle.debug:
                 self.camera.roi = value
 
@@ -276,26 +278,26 @@ class Base(pzp.Piece):
     # MARK: Actions
     def define_actions(self):
         @pzp.action.define(self, "Take background", visible=False)
-        def take_background(self):
+        def take_background():
             background = self.params["image"].get_value()
             self.params["background"].set_value(background)
 
         @pzp.action.define(self, "ROI", visible=False)
         @self._ensure_connected
-        def roi(self):
+        def roi():
             self.open_popup(_ROI_Popup, "Camera Region of Interest")
 
         @pzp.action.define(self, "Reset ROI", visible=False)
         @self._ensure_connected
         @self._ensure_disarmed
-        def reset_roi(self):
+        def reset_roi():
             if not self.puzzle.debug:
                 self.params["roi"].set_value(
                     [0, 0, self.camera.roi_range[-2], self.camera.roi_range[-1]]
                 )
 
         @pzp.action.define(self, "Save image")
-        def save_image(self, filename=None):
+        def save_image(filename=None):
             image = self.params["image"].value
             if image is None:
                 image = self.params["image"].get_value()
@@ -308,20 +310,20 @@ class Base(pzp.Piece):
             Image.fromarray((image // 4).astype(np.uint8)).save(filename)
 
         @pzp.action.define(self, "Rediscover", visible=False)
-        def rediscover(self):
+        def rediscover():
             if not self.puzzle.debug:
                 self.params["serial"].input.addItems(
                     self.puzzle.globals["tlc_sdk"].discover_available_cameras()
                 )
 
         @pzp.action.define(self, "Trigger", visible=False)
-        def trigger(self):
+        def trigger():
             self._triggered = True
             if not self.puzzle.debug:
                 self.camera.issue_software_trigger()
 
         @pzp.action.define(self, "Settings")
-        def settings(self):
+        def settings():
             self.open_popup(_Settings, "Camera settings")
 
     @pzp.piece.ensurer
@@ -469,6 +471,8 @@ class Piece(image_preview.ImagePreview, Base):
     """
     Like :class:`~pzp-hardware.thorlabs.camera.Base`, but includes a preview for the
     captured image. Can be made to run live.
+
+    .. image:: ../images/pzp_hardware.thorlabs.camera.Piece.png
     """
 
     live_toggle = True
@@ -482,6 +486,8 @@ class LineoutPiece(image_preview.LineoutImagePreview, Base):
     two movable lines (horizontal and vertical), and plots that show the image profile
     along these lines. These can also act as a crosshair for alignment, and a circle is
     shown where they cross.
+
+    .. image:: ../images/pzp_hardware.thorlabs.camera.LineoutPiece.png
     """
 
     live_toggle = True
