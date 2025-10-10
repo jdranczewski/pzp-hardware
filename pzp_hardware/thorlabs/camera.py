@@ -3,6 +3,8 @@
 # Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
 
 r"""
+.. module_title:: ThorLabs Scientific Camera
+
 Pieces for interacting with `Thorlabs scientific cameras <https://www.thorlabs.com/navigation.cfm?guide_id=2025>`__
 using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.
 

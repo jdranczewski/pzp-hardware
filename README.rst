@@ -63,7 +63,8 @@ Development and contributing
 Puzzlepiece provides a unified API for all of your devices, so the best laboratory automation experience is
 if you have Pieces for all of your hardware. If your hardware is not supported by ``pzp-hardware``, you can
 create a Piece yourself -- puzzlepiece aims to make that as easy as possible! You can create a fork
-of the `main repository <https://github.com/jdranczewski/pzp-hardware>`__, **and we welcome**
+of the `main repository <https://github.com/jdranczewski/pzp-hardware>`__, install it locally as shown above
+to allow development, **and we welcome**
 `pull requests <https://github.com/jdranczewski/pzp-hardware/pulls>`__ **adding support for new hardware.**
 
 **Your Piece should broadly follow the same conventions as the ones currently in the repository.** For example,

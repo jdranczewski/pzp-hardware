@@ -30,3 +30,9 @@ classifiers = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["pzp_hardware"]
+
+[dependency-groups]
+dev = [
+    "sphinx>=5.3.0",
+    "sphinx-rtd-theme>=2.0.0",
+]
