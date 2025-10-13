@@ -34,6 +34,11 @@ def set_wavelength(wavelength):
     tlPM.getWavelength(ctypes.c_int(0), ctypes.byref(wavelength))
     return wavelength.value
 
+def get_wavelength():
+    value = ctypes.c_double()
+    tlPM.getWavelength(ctypes.c_int(0), ctypes.byref(value))
+    return value.value
+
 def power():
     power = ctypes.c_double()
     tlPM.measPower(ctypes.byref(power))

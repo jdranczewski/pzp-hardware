@@ -1,13 +1,33 @@
 import puzzlepiece as pzp
+from puzzlepiece.extras import hardware_tools as pht
 from qtpy import QtCore
 
-import apt_stage
+import _apt_base
 
 
-class Base(apt_stage.Piece):
+class Base(_apt_base.APTBase):
     def define_params(self):
         super().define_params()
-        del self.params["pos"]
+
+        @pzp.param.connect(self)
+        def connect():
+            if self.puzzle.debug:
+                return 1
+            self._ensure_apt()
+            _lib = self.puzzle.globals['apt'].core._lib
+            c = pht.c
+            _lib.PZMOT_GetPositionSteps.argtypes = [c.c_long, c.POINTER(c.c_long)]
+            _lib.PZMOT_MoveAbsoluteStepsEx.argtypes = [c.c_long, c.c_long, c.c_bool]
+            _lib.PZMOT_SetChannel.argtypes = [c.c_long, c.c_long]
+            # Left here for compatibility with apt_stage stuff
+            self.motor = True
+            err_code = self.puzzle.globals['apt'].core._lib.InitHWDevice(int(self.params['serial'].get_value()))
+            if (err_code != 0):
+                message = self.puzzle.globals['apt'].core._get_error_text(err_code)
+                raise Exception(
+                    f"Failed to connect to piezo: {message}"
+                )
+            return 1
 
     def make_channel(self, name, i):
         def set_channel():
@@ -59,33 +79,6 @@ class Base(apt_stage.Piece):
                 )
             return pos.value
 
-    def define_actions(self):
-        @pzp.action.define(self, 'Init')
-        def init(self):
-            if not self.puzzle.debug and not self._ensure(capture_exception=True):
-                self._ensure_apt()
-                c = self.puzzle.globals['apt'].core.ctypes
-                _lib = self.puzzle.globals['apt'].core._lib
-                _lib.PZMOT_GetPositionSteps.argtypes = [c.c_long, c.POINTER(c.c_long)]
-                _lib.PZMOT_MoveAbsoluteStepsEx.argtypes = [c.c_long, c.c_long, c.c_bool]
-                _lib.PZMOT_SetChannel.argtypes = [c.c_long, c.c_long]
-                # Left here for compatibility with apt_stage stuff
-                self.motor = True
-                err_code = self.puzzle.globals['apt'].core._lib.InitHWDevice(int(self.params['serial'].get_value()))
-                if (err_code != 0):
-                    message = self.puzzle.globals['apt'].core._get_error_text(err_code)
-                    raise Exception(
-                        f"Failed to connect to piezo: {message}"
-                    )
-            self.params['connected'].set_value(1)
-
-        @pzp.action.define(self, 'Cleanup')
-        def cleanup(self):
-            if not self.puzzle.debug:
-                self._apt_cleanup()
-                if hasattr(self, 'motor'):
-                    del self.motor
-            self.params['connected'].set_value(0)
 
 class Piece(Base):
     def define_params(self):
@@ -102,35 +95,9 @@ class DoublePiece(Base):
             self.make_channel(name, i)
 
 
-class Nudge(pzp.Piece):
-    def define_params(self):
-        pzp.param.text(self, "move", "piezo:{}")(None)
-        pzp.param.spinbox(self, "distance", 0.1)(None)
-
-    def define_actions(self):
-        def make_direction(name, axis, pm, key):
-            @pzp.action.define(self, name, shortcut=key)
-            def move(self):
-                param = pzp.parse.parse_params(
-                    self['move'].value.format(axis),
-                    self.puzzle
-                )[0]
-                now = param.get_value()
-                param.set_value(now + pm * self["distance"].value)
-
-        for name, axis, pm, key in zip(
-            ("Left", "Right", "Up", "Down"),
-            "xxyy",
-            (-1, 1, 1, -1),
-            (QtCore.Qt.Key.Key_A, QtCore.Qt.Key.Key_D, QtCore.Qt.Key.Key_W, QtCore.Qt.Key.Key_S)
-        ):
-            make_direction(name, axis, pm, key)
-
-
 if __name__ == "__main__":
-    app = pzp.QApp([])
-    puzzle = pzp.Puzzle(debug=True)
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=pht.debug_prompt())
     puzzle.add_piece("piezo", DoublePiece, 0, 0)
-    puzzle.add_piece("nudge", Nudge, 1, 0)
     puzzle.show()
     app.exec()

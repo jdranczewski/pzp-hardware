@@ -498,7 +498,7 @@ class LineoutPiece(image_preview.LineoutImagePreview, Base):
 if __name__ == "__main__":
     # If running this file directly, make a Puzzle, add our Piece, and display it
     app = pzp.QApp()
-    puzzle = pzp.Puzzle(app, "Camera", debug=True)
+    puzzle = pzp.Puzzle(app, "Camera", debug=pht.debug_prompt())
     puzzle.add_piece("camera", LineoutPiece, 0, 0)
     puzzle.show()
     app.exec()
