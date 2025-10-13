@@ -48,7 +48,7 @@ class _ParserFindRequirements(ast.NodeVisitor):
             try:
                 self.found.append(ast.literal_eval(node.args[0]))
             except Exception as e:
-                logger.warn(f"Exception while parsing for requirements: {e}")
+                logger.warning(f"Exception while parsing for requirements: {e}")
 
 
 class RequirementsDirective(SphinxDirective):

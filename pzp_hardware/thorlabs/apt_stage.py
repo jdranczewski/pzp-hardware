@@ -6,7 +6,8 @@ r"""
 :module_title:`ThorLabs APT stage`
 
 Pieces for interacting with
-`ThorLabs moving stages through the APT interface <https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=9019>`__
+`ThorLabs moving stages <https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=2420>`__
+through the `APT interface <https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=9019>`__
 using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.
 
 Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
@@ -20,37 +21,7 @@ Example usage (see :ref:`getting-started` for more details on using Pieces in ge
     puzzle.show()
     app.exec()
 
-Installation
-------------
-* Install the APT Software from https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=9019
-* Locate the ``APT Server`` folder in the APT installation directory
-  (usually ``C:\Program Files\Thorlabs\APT\APT Server``) and copy its path.
-* When running the Piece for the first time, you will be asked for the DLL directory -
-  provide the one you copied above.
-
-Requirements
-------------
-.. pzp_requirements:: pzp_hardware.thorlabs.apt_stage
-
-Troubleshooting
----------------
-If APT or your application crashes while connected to a moving stage, subsequent attempts to load APT
-will likely crash. To fix this, you can:
-
-* Restart the affected stages
-* Restart the affected computer
-* Use the Kinesis software to perform a quick fix (the fastest method, but requires additional software):
-
-  - Install Kinesis from https://www.thorlabs.com/newgrouppage9.cfm?objectgroup_id=10285
-  - Close any instance of APT
-  - Launch Kinesis and wait for it to fully load and detect the stages
-  - Close Kinesis
-  - APT should work normally now!
-
-Note that there can only be one isntance of the APT server running at any time. If you are connected
-to a stage in this Piece and would like to use APT in another application, disconnect from the stage in.
-If you are not connected to a stage, you can still release APT from the puzzlepiece process by using this
-Piece's Cleanup action (available from the Tree view, button at the bottom of the Puzzle or F1).
+.. automodule:: pzp_hardware.thorlabs._apt_base
 
 Available Pieces
 ----------------
@@ -59,7 +30,7 @@ Available Pieces
 import puzzlepiece as pzp
 from puzzlepiece.extras import hardware_tools as pht
 
-import _apt_base
+from pzp_hardware.thorlabs import _apt_base
 
 #MARK: Piece
 class Piece(_apt_base.APTBase):

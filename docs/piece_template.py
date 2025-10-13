@@ -111,7 +111,10 @@ class Piece(pzp.Piece):
 if __name__ == "__main__":
     # If running this file directly, make a Puzzle, add our Piece, and display it
     app = pzp.QApp()
-    puzzle = pzp.Puzzle(app, "Template", debug=True)  # TODO: update names
+    # We prompt to check if the user wants to launch in debug mode so that the
+    # file can be used for testing both, but changes to the debug flag don't
+    # get checked into git
+    puzzle = pzp.Puzzle(app, "Template", debug=pht.debug_prompt())  # TODO: update names
     puzzle.add_piece("template", Piece, row=0, column=0)
     puzzle.show()
     app.exec()
