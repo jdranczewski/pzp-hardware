@@ -80,7 +80,7 @@ class Piece(serial.Base):
 
 if __name__ == "__main__":
     app = pzp.QApp()
-    puzzle = pzp.Puzzle(app, "Shutter", debug=pht.debug_prompt())
+    puzzle = pzp.Puzzle(name="Shutter", debug=pht.debug_prompt())
     puzzle.add_piece("shutter", Piece, 0, 0)
     puzzle.show()
     app.exec()

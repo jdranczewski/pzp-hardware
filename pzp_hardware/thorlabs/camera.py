@@ -42,9 +42,8 @@ Available Pieces
 import puzzlepiece as pzp
 from puzzlepiece.extras import hardware_tools as pht
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtWidgets, QtCore
+from pyqtgraph.Qt import QtWidgets
 import numpy as np
-import os, sys
 
 pht.requirements(
     {
@@ -349,7 +348,7 @@ class Base(pzp.Piece):
             pht.requirements(
                 {
                     "thorlabs_tsi_sdk": {
-                        "url": "https://pzp-hardware.readthedocs.io/en/latest/pzp_hardware.thorlabs.camera.html#installation"
+                        "url": "https://pzp-hardware.readthedocs.io/en/latest/auto/pzp_hardware.thorlabs.camera.html#installation"
                     }
                 }
             )
@@ -498,7 +497,7 @@ class LineoutPiece(image_preview.LineoutImagePreview, Base):
 if __name__ == "__main__":
     # If running this file directly, make a Puzzle, add our Piece, and display it
     app = pzp.QApp()
-    puzzle = pzp.Puzzle(app, "Camera", debug=pht.debug_prompt())
+    puzzle = pzp.Puzzle(name="Camera", debug=pht.debug_prompt())
     puzzle.add_piece("camera", LineoutPiece, 0, 0)
     puzzle.show()
     app.exec()

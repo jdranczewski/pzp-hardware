@@ -97,7 +97,7 @@ class APTBase(pzp.Piece):
             })
             import thorlabs_apt
             if thorlabs_apt.core._lib is None:
-                thorlabs_apt.core._lib =thorlabs_apt.core._load_library()
+                thorlabs_apt.core._lib = thorlabs_apt.core._load_library()
             self.puzzle.globals['apt'] = thorlabs_apt
 
     def _apt_cleanup(self):

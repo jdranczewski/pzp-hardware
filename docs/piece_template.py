@@ -59,6 +59,10 @@ class Piece(pzp.Piece):
     """
     TODO: Write (simple or not) docstrings for the Pieces you want to expose as available
     in the documentation.
+
+    It's best to include a simple screenshot showcasing your Piece (can be in debug mode):
+
+    .. image:: ../images/pzp_hardware.thorlabs.camera.Piece.png
     """
 
     def define_params(self):
@@ -114,7 +118,7 @@ if __name__ == "__main__":
     # We prompt to check if the user wants to launch in debug mode so that the
     # file can be used for testing both, but changes to the debug flag don't
     # get checked into git
-    puzzle = pzp.Puzzle(app, "Template", debug=pht.debug_prompt())  # TODO: update names
+    puzzle = pzp.Puzzle(name="Template", debug=pht.debug_prompt())  # TODO: update names
     puzzle.add_piece("template", Piece, row=0, column=0)
     puzzle.show()
     app.exec()
