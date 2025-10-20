@@ -1,100 +1,162 @@
-import puzzlepiece as pzp
-from pyqtgraph.Qt import QtWidgets
-import requests
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
 
-class Piece(pzp.Piece):
-    url = "http://127.0.0.1:20022/v0"
+r"""
+:module_title:`Pharos laser control`
+
+Pieces for interacting with
+`Pharos lasers <https://lightcon.com/products/pharos-femtosecond-lasers/>`__
+using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.lightcon import pharos
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("pharos", pharos.Piece, row=0, column=0, param_defaults={
+        "address": "http://123.456.789.1:20022" # optionally specify a default IP address
+    })
+    puzzle.show()
+    app.exec()
+
+Installation
+------------
+* Find the IP address and port corresponding to the Pharos API.
+
+  - On older Pharos systems, this will be local (so "http://127.0.0.1:20022" for example) if the
+    control app is running on the same computer as the Piece. If the Pharos control app is running
+    on a different computer, it will be that computer's IP and the same port.
+  - On newer Pharos systems, this will be the IP address of the laser controller, so the IP you use
+    to access the web-based control panel.
+
+* Install the ``requests`` library, or wait to be prompted for automatic installation when first
+  running the Piece.
+* Paste the IP address and port you found in the "address" text box, or see above for setting it as the default
+  in ``add_piece``.
+
+Requirements
+------------
+.. pzp_requirements:: pzp_hardware.generic.hw_bases.http
+
+Available Pieces
+----------------
+"""
+
+import puzzlepiece as pzp
+from puzzlepiece.extras import hardware_tools as pht
+from pyqtgraph.Qt import QtWidgets
+
+from pzp_hardware.generic.hw_bases import http
+
+
+class Piece(http.Base):
+    """
+    Pharos laser control Piece.
+
+    .. image:: ../images/pzp_hardware.lightcon.pharos.Piece.png
+    """
+    _api = "/v0"
+    default_address = "http://127.0.0.1:20022"
+
     def define_params(self):
-        @pzp.param.readout(self, 'full_state', visible=False)
-        def basic(self):
+        super().define_params()
+        address = self["address"]
+
+        @pzp.param.readout(self, "full_state", visible=False)
+        def basic():
             if self.puzzle.debug:
-                return ''
-            
-            r = requests.get(f'{self.url}/Basic')
-            if not r.status_code == 200:
-                raise Exception(f"Error getting state: {r.text}")
-            state = str(r.json()).replace(',', ',\n')
+                return ""
+
+            r = self.rq.get(f"{address.value}{self._api}/Basic")
+            self.check_response(r)
+            state = str(r.json()).replace(",", ",\n")
             return state
-        
-        @pzp.param.readout(self, 'state', visible=True)
-        def basic(self):
+
+        @pzp.param.readout(self, "state", visible=True)
+        def basic():
             if self.puzzle.debug:
-                return ''
-            
-            r = requests.get(f'{self.url}/Basic')
-            if not r.status_code == 200:
-                raise Exception(f"Error getting state: {r.text}")
-            return r.json()['GeneralStatus']
+                return ""
+
+            r = self.rq.get(f"{address.value}{self._api}/Basic")
+            self.check_response(r)
+            return r.json()["GeneralStatus"]
 
         @pzp.param.checkbox(self, "output", 0)
-        def output(self, value):
+        def output(value):
             if self.puzzle.debug:
                 return value
-            
+
             if value:
-                r = requests.post(f'{self.url}/Basic/EnableOutput')
+                r = self.rq.post(f"{address.value}{self._api}/Basic/EnableOutput")
             else:
-                r = requests.post(f'{self.url}/Basic/CloseOutput')
-            if not r.status_code == 200:
-                raise Exception(f"Error setting state: {r.text}")
+                r = self.rq.post(f"{address.value}{self._api}/Basic/CloseOutput")
+            self.check_response(r)
             return value
-        
+
         @output.set_getter(self)
-        def output(self):
+        def output():
             if self.puzzle.debug:
-                return 0
-            
-            r = requests.get(f'{self.url}/Basic/IsOutputEnabled')
-            if not r.status_code == 200:
-                raise Exception(f"Error getting state: {r.text}")
-            return r.text == 'true'
-        
+                return output.value or 0
+
+            r = self.rq.get(f"{address.value}{self._api}/Basic/IsOutputEnabled")
+            self.check_response(r)
+            return r.text == "true"
+
         @pzp.param.spinbox(self, "divider", 1, v_min=1)
-        def divider(self, value):
+        def divider(value):
             if self.puzzle.debug:
                 return value
-            
-            r = requests.put(f'{self.url}/Basic/TargetPpDivider', str(value))
-            if not r.status_code == 200:
-                raise Exception(f"Error setting divider: {r.text}")
+
+            r = self.rq.put(f"{address.value}{self._api}/Basic/TargetPpDivider", str(value))
+            self.check_response(r)
             return value
-        
+
         @divider.set_getter(self)
-        def divider(self):
+        def divider():
             if self.puzzle.debug:
                 return 1
-            
-            r = requests.get(f'{self.url}/Basic/TargetPpDivider')
-            if not r.status_code == 200:
-                raise Exception(f"Error getting divider: {r.text}")
+
+            r = self.rq.get(f"{address.value}{self._api}/Basic/TargetPpDivider")
+            self.check_response(r)
             return int(r.text)
 
     def define_actions(self):
-        @pzp.action.define(self, 'State')
-        def state(self):
-            state = self.params['full_state'].get_value()
+        super().define_actions()
+        address = self["address"]
+
+        @pzp.action.define(self, "Full state")
+        def state():
+            state = self.params["full_state"].get_value()
 
             box = QtWidgets.QMessageBox()
             box.setText(state)
             box.exec()
-        
-        @pzp.action.define(self, 'Standby')
-        def shutdown(self, confirm=True):
+
+        @pzp.action.define(self, "Standby")
+        def shutdown(confirm=True):
             if confirm:
                 mb = QtWidgets.QMessageBox
-                if mb.question(self.puzzle, 'Shutdown', 'Do you want to go to standby?') != mb.StandardButton.Yes:
+                if (
+                    mb.question(
+                        self.puzzle, "Shutdown", "Do you want to go to standby?"
+                    )
+                    != mb.StandardButton.Yes
+                ):
                     return
 
             if self.puzzle.debug:
                 return
-            
-            r = requests.post(f'{self.url}/Basic/GoToStandby')
-            if not r.status_code == 200:
-                raise Exception(f"Error shutting down")
-            
+
+            r = self.rq.post(f"{address.value}{self._api}/Basic/GoToStandby")
+            self.check_response(r)
+
+
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
-    puzzle = pzp.Puzzle(app, "Pharos", debug=True)
-    puzzle.add_piece("pharos", Piece(puzzle), 0, 0)
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(name="Pharos", debug=pht.debug_prompt())
+    puzzle.add_piece("pharos", Piece, 0, 0)
     puzzle.show()
     app.exec()
