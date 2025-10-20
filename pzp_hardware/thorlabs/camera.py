@@ -82,6 +82,14 @@ class Base(pzp.Piece):
 
     custom_horizontal = True
 
+    def debug_image(self):
+        """
+        Override to change the image the Piece returns in debug mode.
+        Random numbers by default. Should return a numpy array of shape
+        (1080, 1440), with values between 0 and 1023.
+        """
+        return np.random.random((1080, 1440)) * 1024
+
     def define_params(self):
         # region Connecting
 
@@ -132,7 +140,10 @@ class Base(pzp.Piece):
         def get_image():
             if self.puzzle.debug:
                 # If we're in debug mode, we just return random noise
-                image = np.random.random((1080, 1440)) * 1024
+                image = self.debug_image()
+                roi = self["roi"].value
+                if roi is not None:
+                    image = image[roi[1]:roi[3], roi[0]:roi[2]]
             else:
                 if not self["unlimited"].value or not self._triggered:
                     self.actions["Trigger"]()
@@ -256,16 +267,17 @@ class Base(pzp.Piece):
         @pzp.param.array(self, "roi", False)
         @self._ensure_connected
         def roi():
-            if not self.puzzle.debug:
-                return self.camera.roi
-            return [0, 0, 99, 79]
+            if self.puzzle.debug:
+                return self["roi"].value if self["roi"].value is not None else [0, 0, 1440, 1080]
+            return self.camera.roi
 
         @roi.set_setter(self)
         @self._ensure_connected
         @self._ensure_disarmed
         def roi(value):
-            if not self.puzzle.debug:
-                self.camera.roi = value
+            if self.puzzle.debug:
+                return value
+            self.camera.roi = value
 
         pzp.param.checkbox(self, "sub_background", 0, visible=False)(None).set_group(
             "Background"
