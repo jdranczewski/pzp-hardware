@@ -1,0 +1,3 @@
+"""
+:module_title:`Patterning`
+"""

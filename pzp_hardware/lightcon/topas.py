@@ -28,7 +28,7 @@ Installation
   in the Topas control app, and will be of the form "http://127.0.0.1:8000/12030" if the
   Topas Server is running on the same computer as the Piece. Note the final part of the
   URL is the OPA's serial number.
-* Install the ``requests`` library, or wait to be prompted for automatic installation when first
+* Install the ``requests`` library with pip, or wait to be prompted for automatic installation when first
   running the Piece.
 * Paste the network address and port you found in the "address" text box, or see above for setting it as the default
   in ``add_piece``.

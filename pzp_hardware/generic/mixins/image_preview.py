@@ -1,13 +1,64 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+"""
+:module_title:`Image preview mixin`
+
+These Mixins allow you to add an image preview to your custom Piece easily.
+They require an array param named ``image`` to exist on the Piece, and will
+update the preview automatically when its value changes.
+
+Add the mixin *before* ``pzp.Piece`` in your class definition, specifying any
+settings as class variables::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.generic.mixins import image_preview
+
+    import numpy as np
+
+    class Piece(image_preview.ImagePreview, pzp.Piece):
+        live_toggle = False # include a toggle to enable live mode
+        autolevel_toggle = False # include a toggle to enable autoleveling
+        max_counts = 255 # the maximum image brightness (will be white with autolevel off)
+        use_numba = False # if you need increased performance, you can tell pyqtgraph to use numba
+        # horizontal_layout = False # you can use Piece settings to display the preview to the right
+        #                           # of the params
+
+        def define_params(self):
+            super().define_params()
+
+            @pzp.param.array(self, "image")
+            def image():
+                return np.random.random((1080, 1440)) * 255
+"""
+
 import puzzlepiece as pzp
 
 import numpy as np
 from qtpy import QtWidgets, QtCore
 import pyqtgraph as pg
 
+#MARK: Base
 class Base():
+    """
+    Base for image previews, implements the live toggle and the autolevel toggle,
+    as well as the settings outlined below.
+
+    .. image:: ../images/pzp_hardware.generic.mixins.image_preview.Base.png
+
+    Will not display an image preview on its own, use
+    :class:`~pzp_hardware.generic.mixins.image_preview.ImagePreview` or
+    :class:`~pzp_hardware.generic.mixins.image_preview.LineoutImagePreview`,
+    which are based on this class.
+    """
+    #: Display a toggle that lets the user refresh the image live
     live_toggle = False
+    #: Display a toggle that makes the image brightness range adjust automatically
     autolevel_toggle = False
+    #: Adjust the default range of the image view, this is the white point
     max_counts = 255
+    #: Enable numba acceleration for some performance gains (but longer initial load times)
     use_numba = False
 
     def custom_layout(self):
@@ -33,19 +84,27 @@ class Base():
                         self.imgw.setLevels([0, self.max_counts])
                 self.autolevel_toggle = pzp.param.ParamCheckbox("autolevel", 0, autolevel)
                 toggle_layout.addWidget(self.autolevel_toggle, 0, 2)
-        
+
         # numba makes image updates slightly faster
         if self.use_numba:
             pg.setConfigOption('useNumba', True)
 
         return layout
-    
+
     def call_stop(self):
         super().call_stop()
         if hasattr(self, "timer"):
             self.timer.stop()
 
+
+#MARK: ImagePreview
 class ImagePreview(Base):
+    """
+    Mixin for displaying an image preview in your Piece. See
+    :mod:`pzp_hardware.generic.mixins.image_preview` above for usage.
+
+    .. image:: ../images/pzp_hardware.generic.mixins.image_preview.ImagePreview.png
+    """
     def custom_layout(self):
         layout = super().custom_layout()
 
@@ -73,7 +132,18 @@ class ImagePreview(Base):
         return layout
 
 
+#MARK: LineoutImagePreview
 class LineoutImagePreview(Base):
+    """
+    Mixin for displaying an image preview in your Piece, with two movable lines
+    that let you plot the image's profile along them. An action is added to centre
+    the lines (keyboard shortcut: ``c``), and a hidden param is included for the
+    line crossing circle radius.
+
+    See :mod:`pzp_hardware.generic.mixins.image_preview` above for mixin usage.
+
+    .. image:: ../images/pzp_hardware.generic.mixins.image_preview.LineoutImagePreview.png
+    """
     def define_actions(self):
         super().define_actions()
 
@@ -82,7 +152,7 @@ class LineoutImagePreview(Base):
             shape = self.params['image'].value.shape
             self._inf_line_x.setValue(shape[0]//2)
             self._inf_line_y.setValue(shape[1]//2)
-    
+
     def define_params(self):
         super().define_params()
         pzp.param.spinbox(self, 'circle_r', 200, visible=False)(None)
@@ -124,7 +194,7 @@ class LineoutImagePreview(Base):
                                  self._inf_line_x.value()-r,
                                  r*2, r*2)
         self.params['circle_r'].changed.connect(update_circle)
-        
+
 
         plot_line_x = plot_x.plot([0], [0])
         plot_line_y = plot_y.plot([0], [0])

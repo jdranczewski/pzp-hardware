@@ -32,7 +32,7 @@ Installation
   - On newer Pharos systems, this will be the IP address of the laser controller, so the IP you use
     to access the web-based control panel.
 
-* Install the ``requests`` library, or wait to be prompted for automatic installation when first
+* Install the ``requests`` library with pip, or wait to be prompted for automatic installation when first
   running the Piece.
 * Paste the IP address and port you found in the "address" text box, or see above for setting it as the default
   in ``add_piece``.
