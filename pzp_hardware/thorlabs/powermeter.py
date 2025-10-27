@@ -125,30 +125,37 @@ class Piece(pzp.Piece):
             return value.value
 
         @pzp.param.spinbox(self, 'avg_time', 10., visible=False)
+        @self._ensure
         def set_avg_time(value):
             if self.puzzle.debug:
                 return value
-            self.imports.set_avg_time(value*1e-3)
+            self.tlPM.setAvgTime(pht.c.c_double(value*1e-3))
 
         @set_avg_time.set_getter(self)
+        @self._ensure
         def get_avg_time():
             if self.puzzle.debug:
                 return set_avg_time.value or 1
-            return self.imports.get_avg_time()*1e3
+            value = pht.c.c_double()
+            self.tlPM.getAvgTime(0, pht.c.byref(value))
+            return value.value*1e3
 
         @pzp.param.readout(self, "power", "{:.2e}")
+        @self._ensure
         def read_power():
             if self.puzzle.debug:
                 return 0
-
-            return self.imports.power()
+            power = pht.c.c_double()
+            self.tlPM.measPower(pht.c.byref(power))
+            return power.value
 
     def define_actions(self):
         @pzp.action.define(self, 'Zero')
+        @self._ensure
         def zero(self):
             if self.puzzle.debug:
                 return
-            self.imports.zero()
+            self.tlPM.startDarkAdjust()
 
         pzp.action.settings(self)
 

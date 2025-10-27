@@ -53,6 +53,9 @@ class Piece(pzp.Piece):
                 if self.puzzle.debug:
                     return value
 
+                # https://github.com/pythonnet/pythonnet/issues/1755
+                if isinstance(value, int):
+                    value = self.imports.Int32(value)
                 self.experiment.SetValue(setting, value)
                 if post_set is not None:
                     post_set(value)
@@ -227,9 +230,13 @@ class Piece(pzp.Piece):
             "pygetwindow": {
                 "pip": "PyGetWindow",
                 "url": "https://pypi.org/project/PyGetWindow/"
+            },
+            "spe_loader": {
+                "pip": "spe2py",
+                "url": "https://pypi.org/project/spe2py/"
             }
         })
-        import _lightfield
+        import pzp_hardware.princeton._lightfield as _lightfield
         import pygetwindow
         self.imports = _lightfield
         self.pygetwindow = pygetwindow

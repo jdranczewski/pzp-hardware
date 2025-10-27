@@ -30,7 +30,8 @@ Installation
     control app is running on the same computer as the Piece. If the Pharos control app is running
     on a different computer, it will be that computer's IP and the same port.
   - On newer Pharos systems, this will be the IP address of the laser controller, so the IP you use
-    to access the web-based control panel.
+    to access the web-based control panel. You can select "REST API" from the top menu, and note the IP
+    address and port in your browser's address bar.
 
 * Install the ``requests`` library with pip, or wait to be prompted for automatic installation when first
   running the Piece.

@@ -80,7 +80,7 @@ class Base():
                 def autolevel(value):
                     image = self["image"].value
                     if value and image is not None:
-                        self.imgw.setLevels([np.amin(image), np.amax(image)])
+                        self.imgw.setImage(autolevels=True)
                     else:
                         self.imgw.setLevels([0, self.max_counts])
                 self.autolevel_toggle = pzp.param.ParamCheckbox("autolevel", 0, autolevel)

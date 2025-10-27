@@ -25,7 +25,7 @@ Installation
 * Locate ``Scientific_Camera_Interfaces.zip``
   (usually in ``C:\Program Files\Thorlabs\Scientific Imaging\Scientific Camera Support``)
 * Unzip the file to a convenient location
-* In the unzipped folder, go to ``SDK/Python Toolki`` and install the provided package zip file in your Python
+* In the unzipped folder, go to ``SDK/Python Toolkit`` and install the provided package zip file in your Python
   environment, for example with ``pip install "<path to thorlabs_tsi_camera_python_sdk_package.zip>"``
 * In the unzipped folder, locate ``SDK\Native Toolkit\dlls\Native_64_lib`` and copy its full path (starting with ``C:``
   or another drive letter)
