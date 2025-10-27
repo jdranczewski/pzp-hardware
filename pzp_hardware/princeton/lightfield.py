@@ -1,9 +1,42 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+r"""
+:module_title:`Lightfield software Piece`
+
+Pieces for interacting with `Thorlabs scientific cameras <https://www.thorlabs.com/navigation.cfm?guide_id=2025>`__
+using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.princeton import lightfield
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("lightfield", lightfield.Piece, row=0, column=0)
+    puzzle.show()
+    app.exec()
+
+Installation
+------------
+* It's complicated
+
+Requirements
+------------
+.. pzp_requirements:: pzp_hardware.princeton.lightfield
+
+Available Pieces
+----------------
+"""
+
 import puzzlepiece as pzp
+from puzzlepiece.extras import hardware_tools as pht
 import numpy as np
 import pyqtgraph as pg
 import time
 from pyqtgraph.Qt import QtWidgets
-import pygetwindow as gw
 
 class Piece(pzp.Piece):
     def __init__(self, puzzle):
@@ -19,7 +52,7 @@ class Piece(pzp.Piece):
             def setter(self, value):
                 if self.puzzle.debug:
                     return value
-                
+
                 self.experiment.SetValue(setting, value)
                 if post_set is not None:
                     post_set(value)
@@ -30,7 +63,7 @@ class Piece(pzp.Piece):
             def setter(self):
                 if self.puzzle.debug:
                     return self[name].value
-                
+
                 value = self.experiment.GetValue(setting)
                 if post_get is not None:
                     post_set()
@@ -41,7 +74,7 @@ class Piece(pzp.Piece):
                                     "D:\\jbd17_automation\\libraries\\lightfield_files\\{}.spe".format(int(value)))
             if not self.experiment.IsReadyToRun:
                 raise Exception("A background file doesn't exist")
-            
+
         if self.puzzle.debug:
             make_param("integration", 300, None)
             make_param("center", 875, None)
@@ -69,7 +102,7 @@ class Piece(pzp.Piece):
             frame = dataset.GetFrame(0, 0)
             data = frame.GetData()
             width = frame.Width
-            
+
             # print(self.values.shape)
             # self.wls = np.array([x for x in self.experiment.SystemColumnCalibration])
             self.wls = np.array(list(self.experiment.SystemColumnCalibration))
@@ -86,7 +119,7 @@ class Piece(pzp.Piece):
         @pzp.param.array(self, "wls", visible=False)
         def wls(self):
             return self.wls
-        
+
         @pzp.readout.define(self, "counts", "{:.2f}")
         def capture(self):
             values = self.params['values'].get_value()
@@ -95,7 +128,7 @@ class Piece(pzp.Piece):
         @pzp.readout.define(self, "saturated", visible=False)
         def saturated(self):
             return 1 if np.amax(self.values) > 6e4 else 0
-        
+
         @pzp.readout.define(self, "max_counts", "{:.2f}", visible=True)
         def max_counts(self):
             values = self.params['values'].get_value()
@@ -119,7 +152,7 @@ class Piece(pzp.Piece):
             if self.puzzle.debug:
                 self.readouts['counts'].get_value()
                 return
-            
+
             # Hardware implementation
             self.experiment.Stop()
             while self.experiment.IsRunning:
@@ -130,13 +163,13 @@ class Piece(pzp.Piece):
             self.experiment.SetValue(
                 self.imports.ExperimentSettings.FileNameGenerationBaseFileName,
                 self.imports.Path.GetFileName(filename))
-            
+
             # print('acquire', filename)
 
             self.experiment.Acquire()
             while self.experiment.IsRunning:
                 time.sleep(0.05)
-            
+
             fname = self.automation.LightFieldApplication.FileManager.GetRecentlyAcquiredFileNames()[0]
             spe_files = self.imports.sl.load_from_files([fname])
             self.wls = spe_files.wavelength
@@ -159,7 +192,7 @@ class Piece(pzp.Piece):
         self.plot1 = self.gl.addPlot(0, 0)
         self.plot_line = self.plot1.plot([0], [0])
         self.plot2 = self.gl.addPlot(0, 1)
-        pg.setConfigOption('useNumba', True)
+        # pg.setConfigOption('useNumba', True)
         self.plot_image = pg.ImageItem(border='w', axisOrder='row-major')
         self.plot2.addItem(self.plot_image)
         self.plot2.invertY(True)
@@ -177,7 +210,7 @@ class Piece(pzp.Piece):
     def _ensure(self):
         if not self.puzzle.debug and not hasattr(self, 'automation'):
             raise Exception("You have to launch Lightfield first.")
-        
+
     @pzp.piece.ensurer
     def _stop(self):
         if not self.puzzle.debug:
@@ -186,14 +219,23 @@ class Piece(pzp.Piece):
                 time.sleep(0.1)
 
     def setup(self):
+        pht.requirements({
+            "pythonnet": {
+                "pip": "pythonnet",
+                "url": "https://pythonnet.github.io/pythonnet/python.html#installation"
+            },
+            "pygetwindow": {
+                "pip": "PyGetWindow",
+                "url": "https://pypi.org/project/PyGetWindow/"
+            }
+        })
         import _lightfield
+        import pygetwindow
         self.imports = _lightfield
-
-    def call_stop(self):
-        self.timer.stop()
+        self.pygetwindow = pygetwindow
 
     def handle_close(self, event):
-        if not self.puzzle.debug and len(gw.getWindowsWithTitle(" - LightField")):
+        if not self.puzzle.debug and len(self.pygetwindow.getWindowsWithTitle(" - LightField")):
             box = QtWidgets.QMessageBox()
             box.setText("Please close Lightfield.")
             box.exec()
@@ -215,7 +257,7 @@ class PopupViewer(pzp.piece.Popup):
         else:
             self.plot_line = self.plot1.plot([0], [0])
         self.plot2 = self.gl.addPlot(0, 1)
-        pg.setConfigOption('useNumba', True)
+        # pg.setConfigOption('useNumba', True)
         self.plot_image = pg.ImageItem(self.parent_piece['values'].value, border='w', axisOrder='row-major')
         self.plot2.addItem(self.plot_image)
         self.plot2.invertY(True)
@@ -228,14 +270,12 @@ class PopupViewer(pzp.piece.Popup):
         self.parent_piece['values'].changed.connect(update_later)
 
         return layout
-    
-    def handle_close(self):
-        self.timer.stop()
+
 
 if __name__ == "__main__":
     # If running this file directly, make a Puzzle, add our Piece, and display it
-    app = QtWidgets.QApplication([])
-    puzzle = pzp.Puzzle(app, "Camera", debug=True)
-    puzzle.add_piece("camera", Piece(puzzle), 0, 0)
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(name="Camera", debug=pht.debug_prompt())
+    puzzle.add_piece("camera", Piece, 0, 0)
     puzzle.show()
     app.exec()

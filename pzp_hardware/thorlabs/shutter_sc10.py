@@ -51,7 +51,7 @@ class Piece(serial.Base):
 
         @pzp.param.checkbox(self, 'open', 0)
         @self._ensure
-        def open(self, value):
+        def open(value):
             if self.puzzle.debug:
                 return value
             # Check state
@@ -66,7 +66,7 @@ class Piece(serial.Base):
 
         @open.set_getter(self)
         @self._ensure
-        def get_open(self):
+        def get_open():
             if self.puzzle.debug:
                 return self['open'].value or 0
             # Get state
@@ -74,7 +74,7 @@ class Piece(serial.Base):
 
     def define_actions(self):
         @pzp.action.define(self, 'Close shutter', QtCore.Qt.Key.Key_F4, visible=False)
-        def toggle(self):
+        def toggle():
             self['open'].set_value(not self.params['open'].value)
 
 

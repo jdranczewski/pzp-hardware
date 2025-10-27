@@ -18,11 +18,12 @@ settings as class variables::
     import numpy as np
 
     class Piece(image_preview.ImagePreview, pzp.Piece):
+        # including any of these settings is optional, these are the defaults:
         live_toggle = False # include a toggle to enable live mode
         autolevel_toggle = False # include a toggle to enable autoleveling
         max_counts = 255 # the maximum image brightness (will be white with autolevel off)
         use_numba = False # if you need increased performance, you can tell pyqtgraph to use numba
-        # horizontal_layout = False # you can use Piece settings to display the preview to the right
+        # horizontal_layout = True # you can use Piece settings to display the preview to the right
         #                           # of the params
 
         def define_params(self):

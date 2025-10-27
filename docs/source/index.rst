@@ -17,6 +17,7 @@ Puzzlepiece Hardware (pzp-hardware)
    :caption: Contents:
 
    getting_started
+   writing_pieces
    auto/pzp_hardware
 
 
