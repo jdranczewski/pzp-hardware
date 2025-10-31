@@ -35,13 +35,21 @@ choose to clone the repository instead, and install a local, editable copy::
 Once installed, you can use the Pieces provided like you would any other Piece in puzzlepiece::
 
     import puzzlepiece as pzp
-    from pzp_hardware.thorlabs import camera
+    from puzzlepiece.extras import hardware_tools as pht
+    from pzp_hardware.thorlabs import camera, apt_stage
 
+    # Create a Qt app, the backend that will run our GUI
     app = pzp.QApp()
-    # Set debug to False to interact with hardware, or you can explore and test in debug mode,
-    # which is the default, and doesn't require the hardware APIs to be present
-    puzzle = pzp.Puzzle(debug=False)
-    puzzle.add_piece("camera", camera.Piece, row=0, column=0)
+
+    # Create a Puzzle, the main window of the application.
+    # We prompt the user whether they want to launch in debug mode, which doesn't talk to hardware.
+    # We use the Puzzle as a context manager, so that if any of the Pieces raise exceptions while
+    # being added, the Puzzle can clean up other APIs and exit cleanly.
+    with pzp.Puzzle(name="Test", debug=pht.debug_prompt()) as puzzle:
+        puzzle.add_piece("camera", camera.Piece, row=0, column=0)
+        puzzle.add_piece("stage", apt_stage.Piece, row=0, column=1)
+
+    # Display the Puzzle and execute the Qt app
     puzzle.show()
     app.exec()
 
