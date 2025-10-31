@@ -12,10 +12,6 @@ https://puzzlepiece.readthedocs.io. This library provides "Pieces" (GUI componen
 commonly used laboratory hardware, so that you can easily assemble your automation
 application (a "Puzzle") out of them.
 
-**This package is currently a work in progress.** The Pieces shown in the documentation
-have been fully ported to the new standard, but they may require a version of puzzlepiece
-that has not been released yet.
-
 * Documentation: https://pzp-hardware.readthedocs.io
 * Repository: https://github.com/jdranczewski/pzp-hardware
 
