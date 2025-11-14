@@ -164,8 +164,8 @@ class LineoutImagePreview(Base):
         # Make the plots
         self.gl = pg.GraphicsLayoutWidget()
         layout.addWidget(self.gl)
-        self.gl.ci.layout.setRowStretchFactor(0, 2)
-        self.gl.ci.layout.setColumnStretchFactor(0, 2)
+        self.gl.ci.layout.setRowStretchFactor(0, 5)
+        self.gl.ci.layout.setColumnStretchFactor(0, 5)
 
         plot_main = self.gl.addPlot(0, 0)
         plot_x = self.gl.addPlot(1, 0)

@@ -54,11 +54,12 @@ class Piece(pzp.Piece):
                     return value
 
                 # https://github.com/pythonnet/pythonnet/issues/1755
+                original_value = value
                 if isinstance(value, int):
                     value = self.imports.Int32(value)
                 self.experiment.SetValue(setting, value)
                 if post_set is not None:
-                    post_set(value)
+                    post_set(original_value)
 
             @setter.set_getter(self)
             @self._ensure
@@ -69,7 +70,7 @@ class Piece(pzp.Piece):
 
                 value = self.experiment.GetValue(setting)
                 if post_get is not None:
-                    post_set()
+                    post_get()
                 return value
 
         def set_bgfile(value):
