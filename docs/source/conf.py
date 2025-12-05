@@ -6,6 +6,7 @@
 # Make sure the project is in the path for autodoc
 import os
 import sys
+import tomllib
 sys.path.append(os.path.abspath("../.."))
 sys.path.append(os.path.abspath("_ext"))
 
@@ -15,7 +16,8 @@ sys.path.append(os.path.abspath("_ext"))
 project = 'pzp-hardware'
 copyright = '2025, jdranczewski'
 author = 'jdranczewski'
-release = '0.2.0'
+with open("../../pyproject.toml", "rb") as f:
+    release = tomllib.load(f)["project"]["version"]
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
