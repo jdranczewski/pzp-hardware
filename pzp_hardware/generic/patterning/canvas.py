@@ -1,5 +1,7 @@
 import puzzlepiece as pzp
+from puzzlepiece.extras import hardware_tools as pht
 from puzzlepiece.extras import datagrid
+
 import pyqtgraph as pg
 from qtpy import QtWidgets, QtGui, QtCore
 import numpy as np
@@ -50,7 +52,9 @@ class Square(CanvasObject):
         )
         roi_item.addScaleHandle([0.5, 1], [0.5, 0.])
         roi_item.addScaleHandle([1, 0.5], [0., 0.5])
-        roi_item.addScaleHandle([1, 0], [0., 1.], lockAspect=True)
+        roi_item.addScaleHandle([0.5, 0.], [0.5, 0.5])
+        roi_item.addScaleHandle([0., 0.5], [0.5, 0.5])
+        roi_item.addScaleHandle([1, 0], [0.5, 0.5], lockAspect=True)
         roi_item.addRotateHandle([1, 1], [0.5, 0.5])
         return roi_item
     
@@ -293,6 +297,7 @@ class Piece(pzp.Piece):
     shape = np.array((1280, 800))
     shape = np.array((1440, 1080))
     tshape = np.array((1280, 800))
+    action_wrap = 3
 
     kinds = {
         "square": Square,
@@ -308,7 +313,7 @@ class Piece(pzp.Piece):
     def define_params(self):
         pzp.param.text(self, "camera_source", "camera:image", visible=False)(None)
 
-        @pzp.param.array(self, "camera_image", True)
+        @pzp.param.array(self, "camera_image", visible=False)
         def image(self):
             param = pzp.parse.parse_params(self["camera_source"].value, self.puzzle)[0]
             return param.get_value()
@@ -321,24 +326,24 @@ class Piece(pzp.Piece):
                 row.draw(image, draw, tform)
             return np.asarray(image)
         
-        @pzp.param.array(self, "image")
+        @pzp.param.array(self, "image", visible=False)
         def image(self):
             return draw_image(self.draw, self.image, None)
         
-        @pzp.param.array(self, "transformed", False)
+        @pzp.param.array(self, "transformed", visible=False)
         def transformed(self):
             return draw_image(self.tdraw, self.timage, self.tform)
         
         self.tform = ProjectiveTransform()
         
-        pzp.param.text(self, "destination", "")(None)
-        auto_project = pzp.param.checkbox(self, "auto_project", 0)(None)
+        pzp.param.text(self, "destination", "", visible=False)(None)
+        auto_project = pzp.param.checkbox(self, "auto_project", False, visible=False)(None)
         auto_project.changed.connect(self._auto_project)
-        pzp.param.checkbox(self, "show_camera", 0)(None)
-        pzp.param.checkbox(self, "auto_camera", 0)(None)
+        pzp.param.checkbox(self, "show_camera", False, visible=False)(None)
+        pzp.param.checkbox(self, "auto_camera", False, visible=False)(None)
 
     def define_actions(self):
-        @pzp.action.define(self, "Callibrate")
+        @pzp.action.define(self, "Callibrate", visible=False)
         def callibrate(self):
             self.open_popup(Callibration, "Callibrate canvas")
 
@@ -350,6 +355,8 @@ class Piece(pzp.Piece):
         @pzp.action.define(self, "Add object")
         def add_object(self):
             self.open_popup(AddObject, "Add canvas object")
+        
+        pzp.action.settings(self)
 
     def add_object_by_name(self, kind):
         row = self.dg.add_row(self.kinds[kind])
@@ -380,7 +387,7 @@ class Piece(pzp.Piece):
         layout.addWidget(self.dg, 0, 0)
 
         pw = pg.PlotWidget()
-        layout.addWidget(pw, 1, 0)
+        layout.addWidget(pw, 0, 1)
         self.plot = pw.getPlotItem()
         self.plot.setAspectLocked(True)
         self.plot.invertY(True)
@@ -422,8 +429,8 @@ class Piece(pzp.Piece):
         return layout
     
 if __name__ == "__main__":
-    app = pzp.QApp([])
-    puzzle = pzp.Puzzle()
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(name="Canvas", debug=pht.debug_prompt())
     puzzle.add_piece("canvas", Piece, 0, 0)
     puzzle.show()
     app.exec()
