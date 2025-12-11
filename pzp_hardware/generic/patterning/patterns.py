@@ -4,22 +4,35 @@ from pyqtgraph.Qt import QtWidgets
 
 class Piece(pzp.Piece):
     def define_params(self):
+        pzp.param.text(self, "destination", "dmd", visible=False)(None)
         pzp.param.spinbox(self, 'radius', 50, v_min=1)(None)
+        pzp.param.slider(
+            self, "brightness", 255,
+            v_min=0, v_max=255, v_step=1,
+            visible=False
+        )(None)
         pzp.param.checkbox(self, 'invert', 0)(None)
-        pzp.param.spinbox(self, 'factor', 1., v_min=.1, v_max=10., v_step=.05)(None)
-        pzp.param.checkbox(self, 'stretch', 0)(None)
+        pzp.param.checkbox(self, 'stretch', 0, visible=False)(None).set_group("Stretch")
+        pzp.param.spinbox(
+            self, 'factor', 1.,
+            v_min=.1, v_max=10., v_step=.05,
+            visible=False
+        )(None).set_group("Stretch")
 
     def define_actions(self):
         @pzp.action.define(self, 'Display')
         def display(self):
-            dmd = self.puzzle['dmd']
+            dmd = self.puzzle[self['destination'].value]
             radius = self.params['radius'].get_value()
-            canvas = np.zeros((dmd.size_y, dmd.size_x))
+            canvas = np.zeros(dmd["image"].value.shape, np.uint8)
             function = [x.dmd_draw_function for x in self._radio_buttons.buttons() if x.isChecked()][0]
             function(canvas, radius)
             if self.params['invert'].value:
                 canvas = - (canvas - 255)
+            canvas[canvas>0] = self["brightness"].value
             dmd.params['image'].set_value(canvas)
+
+        pzp.action.settings(self)
 
     def custom_layout(self):
         layout = QtWidgets.QVBoxLayout()
@@ -35,6 +48,7 @@ class Piece(pzp.Piece):
             self._radio_buttons.addButton(button)
 
         self.params['radius'].changed.connect(self.actions['Display'])
+        self.params['brightness'].changed.connect(self.actions['Display'])
         self.params['invert'].changed.connect(self.actions['Display'])
         self.params['factor'].changed.connect(self.actions['Display'])
         # self.params['stretch'].changed.connect(self.actions['Display'])
@@ -54,7 +68,7 @@ class Piece(pzp.Piece):
         factor = self["factor"].value if self["stretch"].value else 1
         A, B, C, D = x//2 - int(radius*factor), x//2 + int(radius*factor), y//2 - radius, y//2 + radius
         canvas[A:B, C:D] = 255
-        
+
     def checkerboard(self, canvas, radius):
         x, y = canvas.shape
         board = np.asarray([[0, 255], [255, 0]])
@@ -63,10 +77,9 @@ class Piece(pzp.Piece):
         canvas[:] = np.pad(board, ((0, x-2*int(radius*factor)), (0, y-2*radius)), mode='wrap')
 
 if __name__ == "__main__":
-    import dmd
-    app = QtWidgets.QApplication([])
-    puzzle = pzp.Puzzle(app, "Patterns", debug=True)
-    puzzle.add_piece("dmd", dmd.Piece(puzzle), 0, 0)
-    puzzle.add_piece("patterns", Piece(puzzle), 0, 1)
+    from puzzlepiece.extras import hardware_tools as pht
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(name="Patterns", debug=True)
+    puzzle.add_piece("patterns", Piece, 0, 0)
     puzzle.show()
     app.exec()
