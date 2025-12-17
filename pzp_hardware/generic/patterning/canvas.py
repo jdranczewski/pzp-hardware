@@ -6,7 +6,7 @@ import pyqtgraph as pg
 from qtpy import QtWidgets, QtGui, QtCore
 import numpy as np
 from PIL import Image, ImageDraw
-from skimage.transform import ProjectiveTransform, AffineTransform, warp
+from skimage.transform import ProjectiveTransform, AffineTransform, warp, matrix_transform
 
 class CanvasObject(datagrid.Row):
     _default_name = ""
@@ -67,10 +67,10 @@ class Square(CanvasObject):
             rotation=params["angle"]/180*np.pi,
             translation=params["pos"]
         )
-        points = local_t._apply_mat(points, local_t.params)
+        points = matrix_transform(points, local_t.params)
 
         if transform is not None:
-            points = transform._apply_mat(np.asarray(points), transform.params)
+            points = matrix_transform(np.asarray(points), transform.params)
         draw.polygon([tuple(x) for x in points], colour or self["colour"].value)
 
 
@@ -85,10 +85,10 @@ class Triangle(Square):
             rotation=params["angle"]/180*np.pi,
             translation=params["pos"]
         )
-        points = local_t._apply_mat(points, local_t.params)
+        points = matrix_transform(points, local_t.params)
 
         if transform is not None:
-            points = transform._apply_mat(np.asarray(points), transform.params)
+            points = matrix_transform(np.asarray(points), transform.params)
         draw.polygon([tuple(x) for x in points], colour or self["colour"].value)
 
 
@@ -105,10 +105,10 @@ class Circle(Square):
             rotation=params["angle"]/180*np.pi,
             translation=params["pos"]
         )
-        points = local_t._apply_mat(points, local_t.params)
+        points = matrix_transform(points, local_t.params)
 
         if transform is not None:
-            points = transform._apply_mat(np.asarray(points), transform.params)
+            points = matrix_transform(np.asarray(points), transform.params)
         draw.polygon([tuple(x) for x in points], colour or self["colour"].value)
 
 
@@ -151,10 +151,10 @@ class Lines(Square):
                 rotation=params["angle"]/180*np.pi,
                 translation=params["pos"]
             )
-            points = local_t._apply_mat(points, local_t.params)
+            points = matrix_transform(points, local_t.params)
 
             if transform is not None:
-                points = transform._apply_mat(points, transform.params)
+                points = matrix_transform(points, transform.params)
             if self["colours"].value is None or self["colours"].value.shape == ():
                 for i in range(0, len(points), 2):
                     draw.line([tuple(points[i]), tuple(points[i+1])], self["colour"].value, self["width"].value)
@@ -279,7 +279,7 @@ class Callibration(pzp.piece.Popup):
         # Add a ROI
         points = np.array([[0,0], [100,0], [100,100], [0,100], [0, 0]])
         if np.sum(self.parent_piece.tform.params) != 3:
-            points = self.parent_piece.tform._apply_mat(self.points, self.parent_piece.tform._inv_matrix)
+            points = matrix_transform(self.points, self.parent_piece.tform._inv_matrix)
         self.line = self.plot.plot()
         self.targets = []
         def update_line():

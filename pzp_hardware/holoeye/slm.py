@@ -1,3 +1,44 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+r"""
+:module_title:`Holoeye SLM`
+
+Pieces for interacting with `Holoeye SLMs <https://holoeye.com/products/spatial-light-modulators/>`__
+using the `puzzlepiece <https://puzzlepiece.readthedocs.io>`__ framework.
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.holoeye import slm
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("slm", slm.Piece, row=0, column=0)
+    puzzle.show()
+    app.exec()
+
+Installation
+------------
+* Install the SLM SDK. You may have to register your SLM at https://customers.holoeye.com/
+  to get a download link.
+* When you first initialise the Piece, you will be prompted for two directories: the Python
+  examples directory (``C:\Program Files\HOLOEYE Photonics\SLM Display SDK (Python) v4.1.0\examples``)
+  and the Python API directory
+  (``C:\Program Files\HOLOEYE Photonics\SLM Display SDK (Python) v4.1.0\api\python``).
+  Accepting the defaults should be ok in most cases, and you will be prompted if the directories are
+  not found. If your SDK is installed in a non-standard location, provide the correct directories
+  when prompted.
+
+Requirements
+------------
+.. pzp_requirements:: pzp_hardware.holoeye.slm
+
+Available Pieces
+----------------
+"""
+
 import puzzlepiece as pzp
 from puzzlepiece.extras import hardware_tools as pht
 
@@ -37,8 +78,15 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
         def image(value):
             if self.puzzle.debug:
                 return
-            dataHandle = self._check_call(self.slm.loadPhaseData(value))
+            converted = value.astype(np.uint8, copy=False)
+            dataHandle = self._check_call(self.slm.loadPhaseData(converted))
+            scale = self["scale"].value
+            if scale != 1.:
+                self._check_call(dataHandle.setTransformScale(scale))
             self._check_call(dataHandle.show())
+            return converted
+        
+        pzp.param.spinbox(self, "scale", 1., 0)(None)
 
         @pzp.param.spinbox(self, "wavelength", 0.)
         @self._ensure
@@ -110,7 +158,7 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
 
 if __name__ == "__main__":
     app = pzp.QApp()
-    puzzle = pzp.Puzzle(name="DMD", debug=pht.debug_prompt())
-    puzzle.add_piece("dmd", Piece(puzzle), 0, 0)
+    puzzle = pzp.Puzzle(name="Holoeye SLM", debug=pht.debug_prompt())
+    puzzle.add_piece("slm", Piece, 0, 0)
     puzzle.show()
     app.exec()

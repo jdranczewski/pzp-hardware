@@ -155,7 +155,7 @@ class Base(pzp.Piece):
                 # Copy the image we got and save a reference internally
                 image = frame.image_buffer[:, ::-1].copy()
             if self.params["sub_background"].get_value():
-                image -= self.params["background"].get_value()
+                image = image.astype(np.int16) - self.params["background"].get_value()
             return image
 
         @pzp.param.group("Triggering")
