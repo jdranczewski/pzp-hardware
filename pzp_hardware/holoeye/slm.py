@@ -73,9 +73,12 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
 
         image = pzp.param.array(self, 'image')(None)
 
+        prev_handle = None
+
         @image.set_setter(self)
         @self._ensure
         def image(value):
+            nonlocal prev_handle
             if self.puzzle.debug:
                 return
             converted = value.astype(np.uint8, copy=False)
@@ -84,6 +87,9 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
             if scale != 1.:
                 self._check_call(dataHandle.setTransformScale(scale))
             self._check_call(dataHandle.show())
+            if prev_handle is not None:
+                self._check_call(prev_handle.release())
+            prev_handle = dataHandle
             return converted
         
         pzp.param.spinbox(self, "scale", 1., 0)(None)

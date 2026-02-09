@@ -4,7 +4,7 @@ from pyqtgraph.Qt import QtWidgets
 
 class Piece(pzp.Piece):
     def define_params(self):
-        pzp.param.text(self, "destination", "dmd", visible=False)(None)
+        pzp.param.text(self, "destination", "dmd:image", visible=False)(None)
         pzp.param.spinbox(self, 'radius', 50, v_min=1)(None)
         pzp.param.slider(
             self, "brightness", 255,
@@ -22,15 +22,15 @@ class Piece(pzp.Piece):
     def define_actions(self):
         @pzp.action.define(self, 'Display')
         def display(self):
-            dmd = self.puzzle[self['destination'].value]
+            destination = pzp.parse.parse_params(self["destination"].value, self.puzzle)[0]
             radius = self.params['radius'].get_value()
-            canvas = np.zeros(dmd["image"].value.shape, np.uint8)
+            canvas = np.zeros(destination.value.shape, np.uint8)
             function = [x.dmd_draw_function for x in self._radio_buttons.buttons() if x.isChecked()][0]
             function(canvas, radius)
             if self.params['invert'].value:
                 canvas = - (canvas - 255)
             canvas[canvas>0] = self["brightness"].value
-            dmd.params['image'].set_value(canvas)
+            destination.set_value(canvas)
 
         pzp.action.settings(self)
 

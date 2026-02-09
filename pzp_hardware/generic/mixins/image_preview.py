@@ -113,7 +113,7 @@ class ImagePreview(Base):
         self.pw = pg.PlotWidget()
         layout.addWidget(self.pw)
 
-        plot_item = self.pw.getPlotItem()
+        self.plot_item = plot_item = self.pw.getPlotItem()
         plot_item.setAspectLocked(True)
         plot_item.invertY(True)
 
