@@ -28,14 +28,26 @@ class CanvasObject(datagrid.Row):
     @property
     def plot_item(self):
         return self._plot_item
-    
+
     def make_plot_item(self):
         pass
 
     def draw(self, draw, transform):
         raise NotImplementedError
 
-class Square(CanvasObject):
+class CanvasObjectROI(CanvasObject):
+    def define_params(self):
+        super().define_params()
+
+        @pzp.param.readout(self, "roi_state", visible=False)
+        def roi_state():
+            return self.plot_item.saveState()
+
+        @roi_state.set_setter(self)
+        def roi_state(value):
+            self.plot_item.setState(value)
+
+class Square(CanvasObjectROI):
     _default_name = "square"
     def define_actions(self):
         @pzp.action.define(self, "Reset")
@@ -57,7 +69,7 @@ class Square(CanvasObject):
         roi_item.addScaleHandle([1, 0], [0.5, 0.5], lockAspect=True)
         roi_item.addRotateHandle([1, 1], [0.5, 0.5])
         return roi_item
-    
+
     def draw(self, image, draw, transform, colour=None):
         points = (0, 0), (0, 200), (200, 200), (200, 0)
 
@@ -133,14 +145,14 @@ class Lines(Square):
             return value
         pzp.param.array(self, "colours", False)(None)
         pzp.param.spinbox(self, "width", 5, visible=False)(None)
-    
+
     def define_actions(self):
         super().define_actions()
-        
+
         @pzp.action.define(self, "Settings")
         def settings(self):
             self.open_popup(LinesSettings, f"{self['name'].value} settings")
-    
+
     def draw(self, image, draw, transform):
         if self["points"].value is not None:
             points = self["points"].value
@@ -203,7 +215,7 @@ class CanvasImage(Square):
         else:
             self._mask_draw_dmd.rectangle(((0, 0), self._mask_dmd.size), 0)
             super().draw(image, self._mask_draw_dmd, transform, 1)
-            
+
             warped = warp(
                 warped,
                 transform.inverse,
@@ -317,7 +329,7 @@ class Piece(pzp.Piece):
         def image(self):
             param = pzp.parse.parse_params(self["camera_source"].value, self.puzzle)[0]
             return param.get_value()
-        
+
         def draw_image(draw, image, tform):
             draw.rectangle(((0, 0), image.size), 0)
             zorders = [row["zorder"].value for row in self.dg.rows]
@@ -325,17 +337,17 @@ class Piece(pzp.Piece):
             for row in rows:
                 row.draw(image, draw, tform)
             return np.asarray(image)
-        
+
         @pzp.param.array(self, "image", visible=False)
         def image(self):
             return draw_image(self.draw, self.image, None)
-        
+
         @pzp.param.array(self, "transformed", visible=False)
         def transformed(self):
             return draw_image(self.tdraw, self.timage, self.tform)
-        
+
         self.tform = ProjectiveTransform()
-        
+
         pzp.param.text(self, "destination", "", visible=False)(None)
         auto_project = pzp.param.checkbox(self, "auto_project", False, visible=False)(None)
         auto_project.changed.connect(self._auto_project)
@@ -355,7 +367,7 @@ class Piece(pzp.Piece):
         @pzp.action.define(self, "Add object")
         def add_object(self):
             self.open_popup(AddObject, "Add canvas object")
-        
+
         pzp.action.settings(self)
 
     def add_object_by_name(self, kind):
@@ -371,7 +383,7 @@ class Piece(pzp.Piece):
         for row in self.dg.rows:
             if row["name"].value == name:
                 return row
-    
+
     def _auto_project(self):
         if self["auto_project"].value:
             self.actions["Project"]()
@@ -399,7 +411,7 @@ class Piece(pzp.Piece):
         self.image_item = pg.ImageItem(np.asarray(self.image), border='w', axisOrder='row-major', levels=[0, 255])
         self.plot.addItem(self.image_item)
         self.draw = ImageDraw.Draw(self.image)
-        
+
         self.timage = Image.new("L", tuple(self.tshape), 0)
         self.tdraw = ImageDraw.Draw(self.timage)
 
@@ -427,7 +439,7 @@ class Piece(pzp.Piece):
         self["show_camera"].changed.connect(switch_camera)
 
         return layout
-    
+
 if __name__ == "__main__":
     app = pzp.QApp()
     puzzle = pzp.Puzzle(name="Canvas", debug=pht.debug_prompt())
