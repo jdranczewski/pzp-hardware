@@ -263,6 +263,9 @@ class Base(pzp.Piece):
 
         # endregion
 
+        # region ROI and binning
+        # Note: the ROI is defined as a 4-element tuple - (upper_left_x, upper_left_y, lower_right_x, lower_right_y)
+        # the units are in coordinates _prior_ to binning
         @pzp.param.group("Region of interest")
         @pzp.param.array(self, "roi", False)
         @self._ensure_connected
@@ -278,6 +281,40 @@ class Base(pzp.Piece):
             if self.puzzle.debug:
                 return value
             self.camera.roi = value
+
+        @pzp.param.group("Region of interest")
+        @pzp.param.spinbox(self, "bin_x", 1, visible=False)
+        @self._ensure_connected
+        @self._ensure_disarmed
+        def bin_x(value):
+            if self.puzzle.debug:
+                return value
+            self.camera.binx = value
+
+        @bin_x.set_getter(self)
+        @self._ensure_connected
+        def bin_x():
+            if self.puzzle.debug:
+                return 1
+            return self.camera.binx
+        
+        @pzp.param.group("Region of interest")
+        @pzp.param.spinbox(self, "bin_y", 1, visible=False)
+        @self._ensure_connected
+        @self._ensure_disarmed
+        def bin_x(value):
+            if self.puzzle.debug:
+                return value
+            self.camera.biny = value
+
+        @bin_x.set_getter(self)
+        @self._ensure_connected
+        def bin_x():
+            if self.puzzle.debug:
+                return 1
+            return self.camera.biny
+
+        # endregion
 
         pzp.param.checkbox(self, "sub_background", 0, visible=False)(None).set_group(
             "Background"
@@ -302,10 +339,12 @@ class Base(pzp.Piece):
         @self._ensure_connected
         @self._ensure_disarmed
         def reset_roi():
-            if not self.puzzle.debug:
-                self.params["roi"].set_value(
-                    [0, 0, self.camera.roi_range[-2], self.camera.roi_range[-1]]
-                )
+            if self.puzzle.debug:
+                self.params["roi"].set_value([0, 0, 1440, 1080])
+                return
+            self.params["roi"].set_value(
+                [0, 0, self.camera.roi_range[-2], self.camera.roi_range[-1]]
+            )
 
         @pzp.action.define(self, "Save image")
         def save_image(filename=None):
@@ -404,6 +443,11 @@ class _ROI_Popup(pzp.piece.Popup):
         @pzp.action.define(self, "set_roi_from_camera", visible=False)
         def set_roi_from_camera(self):
             camera_roi = self.parent_piece.params["roi"].get_value()
+            bin_xy = (
+                self.parent_piece.params["bin_x"].get_value(),
+                self.parent_piece.params["bin_y"].get_value()
+            )
+            camera_roi = [camera_roi[i]/bin_xy[i%2] for i in range(4)]
             self.roi_item.setPos(camera_roi[:2])
             self.roi_item.setSize(
                 [camera_roi[2] - camera_roi[0] + 1, camera_roi[3] - camera_roi[1] + 1]
@@ -411,13 +455,13 @@ class _ROI_Popup(pzp.piece.Popup):
 
         @pzp.action.define(self, "Capture ref")
         def capture_reference(self):
+            # reset the ROI to the original one temporarily, and then back to the user setting
             if not self.puzzle.debug:
                 original_roi = self.parent_piece.params["roi"].get_value()
                 self.parent_piece.params["armed"].set_value(0)
                 self.parent_piece.actions["Reset ROI"]()
             self.parent_piece.params["armed"].set_value(1)
             image = self.parent_piece.params["image"].get_value()
-            self._rows, self._cols = image.shape
             self.imgw.setImage(image[:, ::-1])
             if not self.puzzle.debug:
                 self.parent_piece.params["armed"].set_value(0)
@@ -427,6 +471,8 @@ class _ROI_Popup(pzp.piece.Popup):
         def set_roi(self):
             x1, y1 = self.roi_item.pos()
             x2, y2 = self.roi_item.size()
+            x1, x2 = (x*self.parent_piece["bin_x"].get_value() for x in (x1, x2))
+            y1, y2 = (y*self.parent_piece["bin_y"].get_value() for y in (y1, y2))
             x2 += x1 - 1
             y2 += y1 - 1
             x1, x2, y1, y2 = (int(np.round(x)) for x in (x1, x2, y1, y2))
@@ -447,8 +493,8 @@ class _ROI_Popup(pzp.piece.Popup):
 
         @pzp.action.define(self, "Reset")
         def reset_roi(self):
-            self.roi_item.setPos((0, 0))
-            self.roi_item.setSize((self._cols, self._rows))
+            self.parent_piece.actions["Reset ROI"]()
+            self.actions["set_roi_from_camera"]()
 
     def custom_layout(self):
         layout = QtWidgets.QVBoxLayout()
@@ -469,6 +515,12 @@ class _ROI_Popup(pzp.piece.Popup):
         self.roi_item = pg.ROI([0, 0], [10, 10], pen=(255, 255, 0, 200))
         self.roi_item.addScaleHandle([0.5, 1], [0.5, 0.5])
         self.roi_item.addScaleHandle([1, 0.5], [0.5, 0.5])
+
+        # Finish up
+        if self.puzzle.debug:
+            self._cols, self._rows = 1440, 1080
+        else:
+            self._cols, self._rows = self.parent_piece.camera.roi_range[-2], self.parent_piece.camera.roi_range[-1]
         self.actions["set_roi_from_camera"]()
         self.actions["Capture ref"]()
         self.imgw.update()
