@@ -136,6 +136,15 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
                 validator=pht.validator_path_exists
             )
         )
+        docs_url = {
+            "url": "https://pzp-hardware.readthedocs.io/en/latest/auto/pzp_hardware.holoeye.slm.html#installation"
+        }
+        pht.requirements(
+            {
+                "HEDS": docs_url,
+                "hedslib": docs_url
+            }
+        )
         import HEDS
         import hedslib.heds_types
         self.HEDS = HEDS

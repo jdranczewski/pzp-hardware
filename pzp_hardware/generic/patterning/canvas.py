@@ -262,7 +262,7 @@ class Callibration(pzp.piece.Popup):
 
         @pzp.action.define(self, "Save")
         def save(self):
-            self.parent_piece.tform.estimate([x.pos() for x in self.targets], self.points)
+            self.parent_piece.tform = ProjectiveTransform.from_estimate([x.pos() for x in self.targets], self.points)
             self.parent_piece._auto_project()
 
     def custom_layout(self):
@@ -287,6 +287,7 @@ class Callibration(pzp.piece.Popup):
         self.params['camera_image'].changed.connect(update_later)
 
         self.actions["Draw pattern"]()
+        self["camera_image"].get_value()
 
         # Add a ROI
         points = np.array([[0,0], [100,0], [100,100], [0,100], [0, 0]])
@@ -347,6 +348,14 @@ class Piece(pzp.Piece):
             return draw_image(self.tdraw, self.timage, self.tform)
 
         self.tform = ProjectiveTransform()
+
+        @pzp.param.base_param(self, "calibration", None, visible=False)
+        def calibration(matrix):
+            self.tform = ProjectiveTransform(matrix=matrix)
+        
+        @calibration.set_getter(self)
+        def calibration():
+            return self.tform.params
 
         pzp.param.text(self, "destination", "", visible=False)(None)
         auto_project = pzp.param.checkbox(self, "auto_project", False, visible=False)(None)
