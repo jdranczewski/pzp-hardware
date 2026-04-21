@@ -41,6 +41,7 @@ Available Pieces
 import puzzlepiece as pzp
 from puzzlepiece.extras import hardware_tools as pht
 import numpy as np
+import os
 
 from pzp_hardware.generic.mixins import image_preview
 
@@ -70,7 +71,12 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
             if self.puzzle.debug:
                 self.actions['Black']()
                 return 1
-            self._dmd = self._ALP4.ALP4(version = '4.3')
+            # Adding DLL directory requires the actual folder, but ALP4 wants the folder above
+            # So if x64 is included in the path, we strip it here
+            lib_parts = list(os.path.split(self._lib_dir))
+            if lib_parts[-1] == "x64" or lib_parts[-1] == "x32":
+                del lib_parts[-1]
+            self._dmd = self._ALP4.ALP4(version = '4.3', libDir=os.path.join(*lib_parts))
             self._dmd.Initialize()
             self._seq = self._dmd.SeqAlloc(nbImg = 1, bitDepth = 1)
             self.size_x, self.size_y = self._dmd.nSizeX, self._dmd.nSizeY
@@ -94,7 +100,7 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
             if not self.puzzle.debug:
                 self._dmd.Halt()
                 self._dmd.SeqPut(imgData = np.asarray(value).ravel(), SequenceId=self._seq)
-                self._dmd.Run()
+                self._dmd.Run(self._seq, loop=True)
 
     def define_actions(self):
         @pzp.action.define(self, 'White')
@@ -122,14 +128,13 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
             "pip": "ALP4lib",
             "url": "https://pzp-hardware.readthedocs.io/en/latest/auto/pzp_hardware.vialux.dmd.html#installation"
         }})
-        pht.add_dll_directory(
-            pht.config(
-                "ALP4_dll_directory",
-                default=r"C:\Program Files\ALP-4.4\ALP-4.4 API\x64",
-                description="the exact path may depend on your DMD's ALP version, say 4.4 vs 4.1",
-                validator=pht.validator_path_exists
-            )
+        self._lib_dir = pht.config(
+            "ALP4_dll_directory",
+            default=r"C:\Program Files\ALP-4.3\ALP-4.3 API\x64",
+            description="the exact path may depend on your DMD's ALP version, say 4.4 vs 4.1",
+            validator=pht.validator_path_exists
         )
+        pht.add_dll_directory(self._lib_dir)
         import ALP4
         self._ALP4 = ALP4
 
@@ -259,10 +264,13 @@ class AdvancedPiece(Piece):
 
     def custom_layout(self):
         layout = super().custom_layout()
-        self["preview_i"].changed.connect(lambda: self.imgw.setImage(
-            self['image_sequence'].value[self["preview_i"].value],
-            autoLevels=False
-        ))
+        def update_preview():
+            self.imgw.setImage(
+                self['image_sequence'].value[self["preview_i"].value],
+                autoLevels=False
+            )
+        update_later = pzp.threads.CallLater(update_preview)
+        self["preview_i"].changed.connect(update_later)
         return layout
 
 
