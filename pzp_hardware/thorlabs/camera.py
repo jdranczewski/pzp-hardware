@@ -144,6 +144,7 @@ class Base(pzp.Piece):
                 roi = self["roi"].value
                 if roi is not None:
                     image = image[roi[1]:roi[3], roi[0]:roi[2]]
+                self.params["frame_N"].set_value(self.params["frame_N"].value+1)
             else:
                 if not self["unlimited"].value or not self._triggered:
                     self.actions["Trigger"]()
@@ -158,7 +159,7 @@ class Base(pzp.Piece):
             if self.params["sub_background"].get_value():
                 image = image.astype(np.int16) - self.params["background"].get_value()
             return image
-        
+
 
         @pzp.param.group("Triggering")
         @pzp.param.checkbox(self, "unlimited", 0, visible=False)
@@ -176,7 +177,7 @@ class Base(pzp.Piece):
         def unlimited():
             if self.puzzle.debug:
                 return True
-            
+
             return not self.camera.frames_per_trigger_zero_for_unlimited
 
         # Make a checkbox for arming the camera
@@ -187,6 +188,8 @@ class Base(pzp.Piece):
         @self._ensure_connected
         def armed(value):
             if self.puzzle.debug:
+                if value:
+                    self.params["frame_N"].set_value(-1)
                 return value
             current_value = self.params["armed"].value
 
@@ -200,7 +203,7 @@ class Base(pzp.Piece):
                 self._triggered = 0
                 return 0
             return current_value
-        
+
         @self["armed"].set_getter(self)
         @self._ensure_connected
         def armed():
@@ -316,7 +319,7 @@ class Base(pzp.Piece):
             if self.puzzle.debug:
                 return 1
             return self.camera.binx
-        
+
         @pzp.param.group("Region of interest")
         @pzp.param.spinbox(self, "bin_y", 1, visible=False)
         @self._ensure_connected
