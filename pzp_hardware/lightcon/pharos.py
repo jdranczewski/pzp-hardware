@@ -28,7 +28,12 @@ Installation
 
   - On older Pharos systems, this will be local (so "http://127.0.0.1:20022" for example) if the
     control app is running on the same computer as the Piece. If the Pharos control app is running
-    on a different computer, it will be that computer's IP and the same port.
+    on a different computer, it will be that computer's IP and the same port. You have to select
+    "Run REST server at startup" in the Pharos control app, and restart it. You can then select "help",
+    which will open a help page in your browser - you can then see the port to use in the address bar.
+    You may need to open this port in the Windows firewall to access it from another computer. It's best
+    practice to restrict this access to specific computers, so you don't give control of your laser to
+    everyone on the network.
   - On newer Pharos systems, this will be the IP address of the laser controller, so the IP you use
     to access the web-based control panel. You can select "REST API" from the top menu, and note the IP
     address and port in your browser's address bar.
@@ -59,7 +64,7 @@ class Piece(http.Base):
 
     .. image:: ../images/pzp_hardware.lightcon.pharos.Piece.png
     """
-    _api = "/v0"
+    _api = "/v1"
     default_address = "http://127.0.0.1:20022"
 
     def define_params(self):
@@ -152,6 +157,24 @@ class Piece(http.Base):
                 return
 
             r = self.rq.post(f"{address.value}{self._api}/Basic/GoToStandby")
+            self.check_response(r)
+
+        @pzp.action.define(self, "Shutdown")
+        def shutdown(confirm=True):
+            if confirm:
+                mb = QtWidgets.QMessageBox
+                if (
+                    mb.question(
+                        self.puzzle, "Shutdown", "Do you want to turn off the laser?"
+                    )
+                    != mb.StandardButton.Yes
+                ):
+                    return
+
+            if self.puzzle.debug:
+                return
+
+            r = self.rq.post(f"{address.value}{self._api}/Basic/TurnOff")
             self.check_response(r)
 
 

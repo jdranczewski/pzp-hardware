@@ -1,10 +1,62 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+"""
+:module_title:`Canvas`
+
+Display movable shapes and images on any Piece with an array parameter
+(DMD, SLM, etc).
+
+A coordinate calibration can be applied to the projection, allowing the shapes to be
+positioned in camera space rather than DMD space.
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.vialux import dmd
+    from pzp_hardware.generic.patterning import canvas
+
+    class Canvas(canvas.Piece):
+        # Subclass to set the desired camera and destination shapes
+        shape = np.array((1440, 1080))
+        tshape = np.array((1280, 800))
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("dmd", dmd.Piece, row=0, column=0)
+    puzzle.add_piece("canvas", Canvas, row=0, column=1, param_defaults={
+        "destination": "dmd:image"
+    })
+    puzzle.show()
+    app.exec()
+
+Requirements
+------------
+.. pzp_requirements:: pzp_hardware.generic.patterning.canvas
+
+"""
+
 import puzzlepiece as pzp
+from puzzlepiece.extras import hardware_tools as pht
 from puzzlepiece.extras import datagrid
+
 import pyqtgraph as pg
 from qtpy import QtWidgets, QtGui, QtCore
 import numpy as np
+
+pht.requirements({
+    "PIL": {
+        "pip": "pillow",
+        "url": "https://pillow.readthedocs.io/en/stable/installation/basic-installation.html",
+    },
+    "skimage": {
+        "pip": "scikit-image",
+        "url": "https://scikit-image.org/docs/stable/user_guide/install.html#install-via-pip"
+    }
+})
 from PIL import Image, ImageDraw
-from skimage.transform import ProjectiveTransform, AffineTransform, warp
+from skimage.transform import ProjectiveTransform, AffineTransform, warp, matrix_transform
 
 class CanvasObject(datagrid.Row):
     _default_name = ""
@@ -26,14 +78,26 @@ class CanvasObject(datagrid.Row):
     @property
     def plot_item(self):
         return self._plot_item
-    
+
     def make_plot_item(self):
         pass
 
     def draw(self, draw, transform):
         raise NotImplementedError
 
-class Square(CanvasObject):
+class CanvasObjectROI(CanvasObject):
+    def define_params(self):
+        super().define_params()
+
+        @pzp.param.readout(self, "roi_state", visible=False)
+        def roi_state():
+            return self.plot_item.saveState()
+
+        @roi_state.set_setter(self)
+        def roi_state(value):
+            self.plot_item.setState(value)
+
+class Square(CanvasObjectROI):
     _default_name = "square"
     def define_actions(self):
         @pzp.action.define(self, "Reset")
@@ -50,10 +114,12 @@ class Square(CanvasObject):
         )
         roi_item.addScaleHandle([0.5, 1], [0.5, 0.])
         roi_item.addScaleHandle([1, 0.5], [0., 0.5])
-        roi_item.addScaleHandle([1, 0], [0., 1.], lockAspect=True)
+        roi_item.addScaleHandle([0.5, 0.], [0.5, 0.5])
+        roi_item.addScaleHandle([0., 0.5], [0.5, 0.5])
+        roi_item.addScaleHandle([1, 0], [0.5, 0.5], lockAspect=True)
         roi_item.addRotateHandle([1, 1], [0.5, 0.5])
         return roi_item
-    
+
     def draw(self, image, draw, transform, colour=None):
         points = (0, 0), (0, 200), (200, 200), (200, 0)
 
@@ -63,10 +129,10 @@ class Square(CanvasObject):
             rotation=params["angle"]/180*np.pi,
             translation=params["pos"]
         )
-        points = local_t._apply_mat(points, local_t.params)
+        points = matrix_transform(points, local_t.params)
 
         if transform is not None:
-            points = transform._apply_mat(np.asarray(points), transform.params)
+            points = matrix_transform(np.asarray(points), transform.params)
         draw.polygon([tuple(x) for x in points], colour or self["colour"].value)
 
 
@@ -81,10 +147,10 @@ class Triangle(Square):
             rotation=params["angle"]/180*np.pi,
             translation=params["pos"]
         )
-        points = local_t._apply_mat(points, local_t.params)
+        points = matrix_transform(points, local_t.params)
 
         if transform is not None:
-            points = transform._apply_mat(np.asarray(points), transform.params)
+            points = matrix_transform(np.asarray(points), transform.params)
         draw.polygon([tuple(x) for x in points], colour or self["colour"].value)
 
 
@@ -101,10 +167,10 @@ class Circle(Square):
             rotation=params["angle"]/180*np.pi,
             translation=params["pos"]
         )
-        points = local_t._apply_mat(points, local_t.params)
+        points = matrix_transform(points, local_t.params)
 
         if transform is not None:
-            points = transform._apply_mat(np.asarray(points), transform.params)
+            points = matrix_transform(np.asarray(points), transform.params)
         draw.polygon([tuple(x) for x in points], colour or self["colour"].value)
 
 
@@ -129,14 +195,14 @@ class Lines(Square):
             return value
         pzp.param.array(self, "colours", False)(None)
         pzp.param.spinbox(self, "width", 5, visible=False)(None)
-    
+
     def define_actions(self):
         super().define_actions()
-        
+
         @pzp.action.define(self, "Settings")
         def settings(self):
             self.open_popup(LinesSettings, f"{self['name'].value} settings")
-    
+
     def draw(self, image, draw, transform):
         if self["points"].value is not None:
             points = self["points"].value
@@ -147,10 +213,10 @@ class Lines(Square):
                 rotation=params["angle"]/180*np.pi,
                 translation=params["pos"]
             )
-            points = local_t._apply_mat(points, local_t.params)
+            points = matrix_transform(points, local_t.params)
 
             if transform is not None:
-                points = transform._apply_mat(points, transform.params)
+                points = matrix_transform(points, transform.params)
             if self["colours"].value is None or self["colours"].value.shape == ():
                 for i in range(0, len(points), 2):
                     draw.line([tuple(points[i]), tuple(points[i+1])], self["colour"].value, self["width"].value)
@@ -199,7 +265,7 @@ class CanvasImage(Square):
         else:
             self._mask_draw_dmd.rectangle(((0, 0), self._mask_dmd.size), 0)
             super().draw(image, self._mask_draw_dmd, transform, 1)
-            
+
             warped = warp(
                 warped,
                 transform.inverse,
@@ -246,7 +312,7 @@ class Callibration(pzp.piece.Popup):
 
         @pzp.action.define(self, "Save")
         def save(self):
-            self.parent_piece.tform.estimate([x.pos() for x in self.targets], self.points)
+            self.parent_piece.tform = ProjectiveTransform.from_estimate([x.pos() for x in self.targets], self.points)
             self.parent_piece._auto_project()
 
     def custom_layout(self):
@@ -271,11 +337,12 @@ class Callibration(pzp.piece.Popup):
         self.params['camera_image'].changed.connect(update_later)
 
         self.actions["Draw pattern"]()
+        self["camera_image"].get_value()
 
         # Add a ROI
         points = np.array([[0,0], [100,0], [100,100], [0,100], [0, 0]])
         if np.sum(self.parent_piece.tform.params) != 3:
-            points = self.parent_piece.tform._apply_mat(self.points, self.parent_piece.tform._inv_matrix)
+            points = matrix_transform(self.points, self.parent_piece.tform._inv_matrix)
         self.line = self.plot.plot()
         self.targets = []
         def update_line():
@@ -290,9 +357,18 @@ class Callibration(pzp.piece.Popup):
         return layout
 
 class Piece(pzp.Piece):
-    shape = np.array((1280, 800))
+    """
+    Piece for displaying movable objects on a DMD/SLM/etc patterns.
+    The "destination" param should be a string
+    reference to an ArrayParam in the format ``piece_name:param_name``.
+
+    .. image:: ../images/pzp_hardware.generic.patterning.canvas.Piece.png
+    """
+    #: shape of the camera image, subclass and override to set, (width, height)
     shape = np.array((1440, 1080))
+    #: shape of the DMD/SLM/destination image, subclass and override to set, (width, height)
     tshape = np.array((1280, 800))
+    action_wrap = 3
 
     kinds = {
         "square": Square,
@@ -308,11 +384,11 @@ class Piece(pzp.Piece):
     def define_params(self):
         pzp.param.text(self, "camera_source", "camera:image", visible=False)(None)
 
-        @pzp.param.array(self, "camera_image", True)
+        @pzp.param.array(self, "camera_image", visible=False)
         def image(self):
             param = pzp.parse.parse_params(self["camera_source"].value, self.puzzle)[0]
             return param.get_value()
-        
+
         def draw_image(draw, image, tform):
             draw.rectangle(((0, 0), image.size), 0)
             zorders = [row["zorder"].value for row in self.dg.rows]
@@ -320,25 +396,33 @@ class Piece(pzp.Piece):
             for row in rows:
                 row.draw(image, draw, tform)
             return np.asarray(image)
-        
-        @pzp.param.array(self, "image")
+
+        @pzp.param.array(self, "image", visible=False)
         def image(self):
             return draw_image(self.draw, self.image, None)
-        
-        @pzp.param.array(self, "transformed", False)
+
+        @pzp.param.array(self, "transformed", visible=False)
         def transformed(self):
             return draw_image(self.tdraw, self.timage, self.tform)
-        
+
         self.tform = ProjectiveTransform()
-        
-        pzp.param.text(self, "destination", "")(None)
-        auto_project = pzp.param.checkbox(self, "auto_project", 0)(None)
+
+        @pzp.param.base_param(self, "calibration", None, visible=False)
+        def calibration(matrix):
+            self.tform = ProjectiveTransform(matrix=matrix)
+
+        @calibration.set_getter(self)
+        def calibration():
+            return self.tform.params
+
+        pzp.param.text(self, "destination", "", visible=False)(None)
+        auto_project = pzp.param.checkbox(self, "auto_project", False, visible=False)(None)
         auto_project.changed.connect(self._auto_project)
-        pzp.param.checkbox(self, "show_camera", 0)(None)
-        pzp.param.checkbox(self, "auto_camera", 0)(None)
+        pzp.param.checkbox(self, "show_camera", False, visible=False)(None)
+        pzp.param.checkbox(self, "auto_camera", False, visible=False)(None)
 
     def define_actions(self):
-        @pzp.action.define(self, "Callibrate")
+        @pzp.action.define(self, "Callibrate", visible=False)
         def callibrate(self):
             self.open_popup(Callibration, "Callibrate canvas")
 
@@ -350,6 +434,8 @@ class Piece(pzp.Piece):
         @pzp.action.define(self, "Add object")
         def add_object(self):
             self.open_popup(AddObject, "Add canvas object")
+
+        pzp.action.settings(self)
 
     def add_object_by_name(self, kind):
         row = self.dg.add_row(self.kinds[kind])
@@ -364,7 +450,7 @@ class Piece(pzp.Piece):
         for row in self.dg.rows:
             if row["name"].value == name:
                 return row
-    
+
     def _auto_project(self):
         if self["auto_project"].value:
             self.actions["Project"]()
@@ -380,7 +466,7 @@ class Piece(pzp.Piece):
         layout.addWidget(self.dg, 0, 0)
 
         pw = pg.PlotWidget()
-        layout.addWidget(pw, 1, 0)
+        layout.addWidget(pw, 0, 1)
         self.plot = pw.getPlotItem()
         self.plot.setAspectLocked(True)
         self.plot.invertY(True)
@@ -392,7 +478,7 @@ class Piece(pzp.Piece):
         self.image_item = pg.ImageItem(np.asarray(self.image), border='w', axisOrder='row-major', levels=[0, 255])
         self.plot.addItem(self.image_item)
         self.draw = ImageDraw.Draw(self.image)
-        
+
         self.timage = Image.new("L", tuple(self.tshape), 0)
         self.tdraw = ImageDraw.Draw(self.timage)
 
@@ -420,10 +506,10 @@ class Piece(pzp.Piece):
         self["show_camera"].changed.connect(switch_camera)
 
         return layout
-    
+
 if __name__ == "__main__":
-    app = pzp.QApp([])
-    puzzle = pzp.Puzzle()
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(name="Canvas", debug=pht.debug_prompt())
     puzzle.add_piece("canvas", Piece, 0, 0)
     puzzle.show()
     app.exec()

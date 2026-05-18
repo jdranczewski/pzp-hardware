@@ -113,6 +113,13 @@ class APTBase(pzp.Piece):
         if 'apt' in self.puzzle.globals and hasattr(self, 'motor'):
             return
         raise Exception('Motor not connected')
+    
+    def _check_error(self, err_code):
+        if (err_code != 0):
+            message = self.puzzle.globals['apt'].core._get_error_text(err_code)
+            raise Exception(
+                f"APT error: {message}"
+            )
 
     def setup(self):
         self._ensure_apt()

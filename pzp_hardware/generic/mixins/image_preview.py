@@ -113,7 +113,7 @@ class ImagePreview(Base):
         self.pw = pg.PlotWidget()
         layout.addWidget(self.pw)
 
-        plot_item = self.pw.getPlotItem()
+        self.plot_item = plot_item = self.pw.getPlotItem()
         plot_item.setAspectLocked(True)
         plot_item.invertY(True)
 
@@ -121,8 +121,11 @@ class ImagePreview(Base):
         plot_item.addItem(self.imgw)
 
         def update_image():
+            image_data = self.params['image'].value
+            if image_data is None:
+                return
             self.imgw.setImage(
-                self.params['image'].value,
+                image_data,
                 autoLevels=self.autolevel_toggle and self.autolevel_toggle.value
             )
         if self.autolevel_toggle:
@@ -202,6 +205,8 @@ class LineoutImagePreview(Base):
 
         def update_image():
             image_data = self.params['image'].value
+            if image_data is None:
+                return
             self.imgw.setImage(
                 image_data,
                 autoLevels=self.autolevel_toggle and self.autolevel_toggle.value

@@ -23,7 +23,7 @@ Example usage (see :ref:`getting-started` for more details on using Pieces in ge
 Installation
 ------------
 * Install the ThorLabs Optical Power Monitor (OPM) software from https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=OPM
-* Make sure your powermeter console is using the ``TLPM`` driver, this can be done using the "Driver Switcher" app
+* Make sure your powermeter console is using the ``TLPM`` or ``WinUSB`` driver, this can be done using the "Driver Switcher" app
   installed with the OPM software.
 * The OPM software will install relevant files in two locations, a 32bit and a 64bit one.
 
