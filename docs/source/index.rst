@@ -16,9 +16,9 @@ Puzzlepiece Hardware (pzp-hardware)
    :maxdepth: 3
    :caption: Contents:
 
+   auto/pzp_hardware
    getting_started
    writing_pieces
-   auto/pzp_hardware
 
 
 

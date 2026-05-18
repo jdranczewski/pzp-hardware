@@ -16,7 +16,7 @@ Example usage (see :ref:`getting-started` for more details on using Pieces in ge
 
     app = pzp.QApp()
     puzzle = pzp.Puzzle(debug=False)
-    puzzle.add_piece("hardware", dmd.Piece, row=0, column=0)
+    puzzle.add_piece("dmd", dmd.Piece, row=0, column=0)
     puzzle.show()
     app.exec()
 

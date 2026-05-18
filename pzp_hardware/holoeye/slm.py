@@ -48,6 +48,13 @@ import numpy as np
 import os
 
 class Piece(image_preview.ImagePreview, pzp.Piece):
+    """
+    Piece for controlling a HOLOEYE SLM. Allows setting any image array to the SLM.
+    Have a look at :class:`pzp_hardware.generic.patterning.patterns` for a quick way
+    to display test patterns.
+
+    .. image:: ../images/pzp_hardware.holoeye.slm.Piece.png
+    """
     custom_horizontal = True
     action_wrap = 1
 
@@ -91,7 +98,7 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
                 self._check_call(prev_handle.release())
             prev_handle = dataHandle
             return converted
-        
+
         pzp.param.spinbox(self, "scale", 1., 0)(None)
 
         @pzp.param.spinbox(self, "wavelength", 0.)
@@ -136,13 +143,14 @@ class Piece(image_preview.ImagePreview, pzp.Piece):
                 validator=pht.validator_path_exists
             )
         )
-        docs_url = {
-            "url": "https://pzp-hardware.readthedocs.io/en/latest/auto/pzp_hardware.holoeye.slm.html#installation"
-        }
         pht.requirements(
             {
-                "HEDS": docs_url,
-                "hedslib": docs_url
+                "HEDS": {
+                    "url": "https://pzp-hardware.readthedocs.io/en/latest/auto/pzp_hardware.holoeye.slm.html#installation"
+                },
+                "hedslib": {
+                    "url": "https://pzp-hardware.readthedocs.io/en/latest/auto/pzp_hardware.holoeye.slm.html#installation"
+                }
             }
         )
         import HEDS

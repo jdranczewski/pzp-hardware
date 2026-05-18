@@ -7,5 +7,8 @@ numpy==1.26.2
 sphinx==8.1.3
 sphinx-rtd-theme==3.0.2
 
-#thorlabs.camera
+# thorlabs.camera
 pillow==11.3.0
+
+# generic.patterning.canvas
+scikit-image==0.26.0

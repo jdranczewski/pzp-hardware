@@ -1,3 +1,42 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+"""
+:module_title:`Canvas`
+
+Display movable shapes and images on any Piece with an array parameter
+(DMD, SLM, etc).
+
+A coordinate calibration can be applied to the projection, allowing the shapes to be
+positioned in camera space rather than DMD space.
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.vialux import dmd
+    from pzp_hardware.generic.patterning import canvas
+
+    class Canvas(canvas.Piece):
+        # Subclass to set the desired camera and destination shapes
+        shape = np.array((1440, 1080))
+        tshape = np.array((1280, 800))
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("dmd", dmd.Piece, row=0, column=0)
+    puzzle.add_piece("canvas", Canvas, row=0, column=1, param_defaults={
+        "destination": "dmd:image"
+    })
+    puzzle.show()
+    app.exec()
+
+Requirements
+------------
+.. pzp_requirements:: pzp_hardware.generic.patterning.canvas
+
+"""
+
 import puzzlepiece as pzp
 from puzzlepiece.extras import hardware_tools as pht
 from puzzlepiece.extras import datagrid
@@ -5,6 +44,17 @@ from puzzlepiece.extras import datagrid
 import pyqtgraph as pg
 from qtpy import QtWidgets, QtGui, QtCore
 import numpy as np
+
+pht.requirements({
+    "PIL": {
+        "pip": "pillow",
+        "url": "https://pillow.readthedocs.io/en/stable/installation/basic-installation.html",
+    },
+    "skimage": {
+        "pip": "scikit-image",
+        "url": "https://scikit-image.org/docs/stable/user_guide/install.html#install-via-pip"
+    }
+})
 from PIL import Image, ImageDraw
 from skimage.transform import ProjectiveTransform, AffineTransform, warp, matrix_transform
 
@@ -307,8 +357,16 @@ class Callibration(pzp.piece.Popup):
         return layout
 
 class Piece(pzp.Piece):
-    shape = np.array((1280, 800))
+    """
+    Piece for displaying movable objects on a DMD/SLM/etc patterns.
+    The "destination" param should be a string
+    reference to an ArrayParam in the format ``piece_name:param_name``.
+
+    .. image:: ../images/pzp_hardware.generic.patterning.canvas.Piece.png
+    """
+    #: shape of the camera image, subclass and override to set, (width, height)
     shape = np.array((1440, 1080))
+    #: shape of the DMD/SLM/destination image, subclass and override to set, (width, height)
     tshape = np.array((1280, 800))
     action_wrap = 3
 
@@ -352,7 +410,7 @@ class Piece(pzp.Piece):
         @pzp.param.base_param(self, "calibration", None, visible=False)
         def calibration(matrix):
             self.tform = ProjectiveTransform(matrix=matrix)
-        
+
         @calibration.set_getter(self)
         def calibration():
             return self.tform.params

@@ -1,8 +1,41 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+"""
+:module_title:`Patterns`
+
+Display a set of test patterns (circle, square, checkerboard) on any Piece with an array parameter
+(DMD, SLM, etc).
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.vialux import dmd
+    from pzp_hardware.generic.patterning import patterns
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("dmd", dmd.Piece, row=0, column=0)
+    puzzle.add_piece("patterns", patterns.Piece, row=0, column=1, param_defaults={
+        "destination": "dmd:image"
+    })
+    puzzle.show()
+    app.exec()
+"""
+
 import puzzlepiece as pzp
 import numpy as np
 from pyqtgraph.Qt import QtWidgets
 
 class Piece(pzp.Piece):
+    """
+    Piece for displaying test patterns. The "destination" param should be a string
+    reference to an ArrayParam in the format ``piece_name:param_name``. The destination
+    must already contain an image, so that its shape can be inspected.
+
+    .. image:: ../images/pzp_hardware.generic.patterning.patterns.Piece.png
+    """
     def define_params(self):
         pzp.param.text(self, "destination", "dmd:image", visible=False)(None)
         pzp.param.spinbox(self, 'radius', 50, v_min=1)(None)

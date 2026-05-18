@@ -43,7 +43,9 @@ Once installed, you can use the Pieces provided like you would any other Piece i
     # being added, the Puzzle can clean up other APIs and exit cleanly.
     with pzp.Puzzle(name="Test", debug=pht.debug_prompt()) as puzzle:
         puzzle.add_piece("camera", camera.Piece, row=0, column=0)
-        puzzle.add_piece("stage", apt_stage.Piece, row=0, column=1)
+        puzzle.add_piece("stage", apt_stage.Piece, row=0, column=1, param_defaults={
+            "serial": 1234 # you can provide default values for the params during setup
+        })
 
     # Display the Puzzle and execute the Qt app
     puzzle.show()

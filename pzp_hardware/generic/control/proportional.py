@@ -1,9 +1,36 @@
+# This file is a part of pzp-hardware, a library of laboratory hardware support Pieces
+# for the puzzlepiece GUI & automation framework. Check out https://pzp-hardware.readthedocs.io
+# Licensed under the Apache License 2.0 - https://github.com/jdranczewski/pzp-hardware/blob/main/LICENSE
+
+"""
+:module_title:`Proportional`
+
+A basic proportional controller, changing one param in an attempt to shift another param
+towards a desired value.
+
+Example usage (see :ref:`getting-started` for more details on using Pieces in general)::
+
+    import puzzlepiece as pzp
+    from pzp_hardware.generic.control import proportional
+
+    app = pzp.QApp()
+    puzzle = pzp.Puzzle(debug=False)
+    puzzle.add_piece("dummy", proportional.Dummy, 0, 0)
+    puzzle.add_piece("proportional", proportional.Piece, 1, 0)
+    puzzle.show()
+    app.exec()
+
+"""
+
 import puzzlepiece as pzp
 import numpy as np
 import pyqtgraph as pg
 from qtpy import QtWidgets, QtCore
 
 class Dummy(pzp.Piece):
+    """
+    Test Piece with an input param and an output param that's proportional to it.
+    """
     def define_params(self):
         pzp.param.spinbox(self, "in", 0.)(None)
         pzp.param.spinbox(self, "mult", 10.)(None)
@@ -11,8 +38,13 @@ class Dummy(pzp.Piece):
         @pzp.param.readout(self, "out", format="{:.4f}")
         def out():
             return self["in"].value * self["mult"].value + np.random.random() * self["rand"].value
-        
+
 class Piece(pzp.Piece):
+    """
+    Proportional control Piece.
+
+    .. image:: ../images/pzp_hardware.generic.control.proportional.Piece.png
+    """
     update_plot = QtCore.Signal(float, float)
     param_wrap=2
 
@@ -79,7 +111,7 @@ class Piece(pzp.Piece):
         # Make the plots
         self.gl = pg.GraphicsLayoutWidget()
         layout.addWidget(self.gl)
-        
+
         plot_in = self.gl.addPlot(0, 0)
         self._line_in = line_in = plot_in.plot()
         plot_out = self.gl.addPlot(1, 0)
